@@ -53,13 +53,13 @@ class Nodes {
 
   }
 
-  static String toOutput(Node node, Position position) {
+  static String toFormatted(Node node, Position position) {
     StringBuilder output = new StringBuilder();
-    write(node, position, output, 1, false);
+    format(node, position, output, 1, false);
     return output.toString();
   }
 
-  private static void write(Node node, Position position, StringBuilder output, int moveNo,
+  private static void format(Node node, Position position, StringBuilder output, int moveNo,
       boolean inline) {
     switch (node) {
       case CountNode(Move move, long count, List<Node> children) -> {
@@ -69,7 +69,7 @@ class Nodes {
         }
         if (children != null) {
           for (Node child : children) {
-            write(child, position, output, moveNo, false);
+            format(child, position, output, moveNo, false);
             output.append(System.lineSeparator());
           }
         }
@@ -84,7 +84,7 @@ class Nodes {
           if (!first) {
             output.append(System.lineSeparator());
           }
-          write(child, position, output, moveNo, false);
+          format(child, position, output, moveNo, false);
           first = false;
         }
       }
@@ -109,7 +109,7 @@ class Nodes {
                   case BLACK -> moveNo - 1;
                 }));
           }
-          write(child, position, output, switch (position.getSideToMove()) {
+          format(child, position, output, switch (position.getSideToMove()) {
             case WHITE -> moveNo + 1;
             case BLACK -> moveNo;
           }, first);

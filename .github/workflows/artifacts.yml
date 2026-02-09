@@ -38,7 +38,7 @@ jobs:
           jar cvfm "$REPO_NAME.jar" MANIFEST.MF -C bin .
 
           mkdir -p "$DIR_NAME"
-          cp "$REPO_NAME.jar" LICENSE README.md "$DIR_NAME/"
+          cp "$REPO_NAME.jar" LICENSE README.md CHANGELOG.md "$DIR_NAME/"
 
           zip -r "$DIR_NAME.zip" "$DIR_NAME"
 

@@ -33,11 +33,11 @@ import blog.art.chess.anecdote.Moves.NullMove;
 import blog.art.chess.anecdote.Moves.Promotion;
 import blog.art.chess.anecdote.Moves.PromotionCapture;
 import blog.art.chess.anecdote.Moves.QuietMove;
-import blog.art.chess.anecdote.Moves.Section;
 import blog.art.chess.anecdote.Moves.ShortCastling;
 import blog.art.chess.anecdote.Moves.Square;
 import blog.art.chess.anecdote.Pieces.Colour;
 import blog.art.chess.anecdote.Pieces.Piece;
+import blog.art.chess.anecdote.Stipulations.Operation;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -58,21 +58,17 @@ class Position {
   }
 
   private SortedMap<Square, Piece> board;
-  private final SortedMap<Section, Piece> box;
   private Colour sideToMove;
   private Set<Square> castlingOrigins;
   private Square enPassantTarget;
   private final Deque<State> memory;
 
-  Position(Map<Square, Piece> board, Map<Section, Piece> box, Colour sideToMove,
-      Set<Square> castlingOrigins, Square enPassantTarget) {
-    Pieces.validatePlacement(board, sideToMove, castlingOrigins, enPassantTarget);
+  Position(Map<Square, Piece> board, Colour sideToMove, Set<Square> castlingOrigins,
+      Square enPassantTarget) {
+    Pieces.validate(board, sideToMove, castlingOrigins, enPassantTarget);
     this.board = new TreeMap<>(
         Comparator.comparingInt(Square::file).thenComparingInt(Square::rank));
     this.board.putAll(board);
-    this.box = new TreeMap<>(
-        Comparator.comparing(Section::colour).thenComparingInt(Section::order));
-    this.box.putAll(box);
     this.sideToMove = sideToMove;
     this.castlingOrigins = new HashSet<>(castlingOrigins);
     this.enPassantTarget = enPassantTarget;
@@ -86,7 +82,7 @@ class Position {
   boolean isLegal(List<Move> pseudoLegalMoves) {
     for (Map.Entry<Square, Piece> entry : board.entrySet()) {
       if (entry.getValue().colour() == sideToMove) {
-        if (!Pieces.generateMoves(entry, board, box, castlingOrigins, enPassantTarget,
+        if (!Pieces.generateMoves(entry, board, castlingOrigins, enPassantTarget,
             pseudoLegalMoves)) {
           return false;
         }
@@ -184,25 +180,25 @@ class Position {
         enPassantTarget = null;
         yield true;
       }
-      case Promotion(Square origin, Square target, Section section) -> {
+      case Promotion(Square origin, Square target, Piece promoted) -> {
         if (lanBuilder != null) {
           lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Moves.toLanCode(origin))
               .append("-").append(Moves.toLanCode(target)).append("=")
-              .append(Pieces.toLanCode(box.get(section)));
+              .append(Pieces.toLanCode(promoted));
         }
         board.remove(origin);
-        board.put(target, box.get(section));
+        board.put(target, promoted);
         enPassantTarget = null;
         yield true;
       }
-      case PromotionCapture(Square origin, Square target, Section section) -> {
+      case PromotionCapture(Square origin, Square target, Piece promoted) -> {
         if (lanBuilder != null) {
           lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Moves.toLanCode(origin))
               .append("x").append(Moves.toLanCode(target)).append("=")
-              .append(Pieces.toLanCode(box.get(section)));
+              .append(Pieces.toLanCode(promoted));
         }
         board.remove(origin);
-        board.replace(target, box.get(section));
+        board.replace(target, promoted);
         castlingOrigins.remove(target);
         enPassantTarget = null;
         yield true;
@@ -222,7 +218,7 @@ class Position {
           pseudoLegalMovesNext = new ArrayList<>();
           for (Map.Entry<Square, Piece> entry : board.entrySet()) {
             if (entry.getValue().colour() == sideToMove) {
-              Pieces.generateMoves(entry, board, box, castlingOrigins, enPassantTarget,
+              Pieces.generateMoves(entry, board, castlingOrigins, enPassantTarget,
                   pseudoLegalMovesNext);
             }
           }
@@ -242,7 +238,7 @@ class Position {
         makeMove(nullMove, null, null);
         for (Map.Entry<Square, Piece> entry : board.entrySet()) {
           if (entry.getValue().colour() == sideToMove) {
-            if (!Pieces.generateMoves(entry, board, box, castlingOrigins, enPassantTarget, null)) {
+            if (!Pieces.generateMoves(entry, board, castlingOrigins, enPassantTarget, null)) {
               nChecks++;
             }
           }
@@ -282,14 +278,15 @@ class Position {
     return check;
   }
 
-  String toOutput(String operationOutput) {
-    return Pieces.toOutput(board, sideToMove, castlingOrigins, enPassantTarget, operationOutput);
+  static String toFormatted(Position position, Operation operation) {
+    return Pieces.format(position.board, position.sideToMove, position.castlingOrigins,
+        position.enPassantTarget, operation);
   }
 
   @Override
   public String toString() {
     return new StringJoiner(", ", Position.class.getSimpleName() + "[", "]").add("board=" + board)
-        .add("box=" + box).add("sideToMove=" + sideToMove).add("castlingOrigins=" + castlingOrigins)
+        .add("sideToMove=" + sideToMove).add("castlingOrigins=" + castlingOrigins)
         .add("enPassantTarget=" + enPassantTarget).add("memory=" + memory).toString();
   }
 }

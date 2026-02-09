@@ -32,14 +32,13 @@ import blog.art.chess.anecdote.Moves.Move;
 import blog.art.chess.anecdote.Moves.Promotion;
 import blog.art.chess.anecdote.Moves.PromotionCapture;
 import blog.art.chess.anecdote.Moves.QuietMove;
-import blog.art.chess.anecdote.Moves.Section;
 import blog.art.chess.anecdote.Moves.ShortCastling;
 import blog.art.chess.anecdote.Moves.Square;
+import blog.art.chess.anecdote.Stipulations.Operation;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -104,9 +103,8 @@ class Pieces {
     return List.copyOf(directions);
   }
 
-  static boolean generateMoves(Entry<Square, Piece> entry, Map<Square, Piece> board,
-      Map<Section, Piece> box, Set<Square> castlingOrigins, Square enPassantTarget,
-      List<Move> moves) {
+  static boolean generateMoves(Map.Entry<Square, Piece> entry, Map<Square, Piece> board,
+      Set<Square> castlingOrigins, Square enPassantTarget, List<Move> moves) {
     Square origin = entry.getKey();
     switch (entry.getValue()) {
       case Leaper leaper -> {
@@ -119,10 +117,10 @@ class Pieces {
               origin.rank() + direction.rankOffset());
           if (target.file() >= 1 && target.file() <= 8 && target.rank() >= 1
               && target.rank() <= 8) {
-            Piece other = board.get(target);
-            if (other != null) {
-              if (other.colour() != leaper.colour()) {
-                if (other instanceof King) {
+            Piece captured = board.get(target);
+            if (captured != null) {
+              if (captured.colour() != leaper.colour()) {
+                if (captured instanceof King) {
                   return false;
                 } else {
                   if (moves != null) {
@@ -196,10 +194,10 @@ class Pieces {
                 origin.rank() + distance * direction.rankOffset());
             if (target.file() >= 1 && target.file() <= 8 && target.rank() >= 1
                 && target.rank() <= 8) {
-              Piece other = board.get(target);
-              if (other != null) {
-                if (other.colour() != rider.colour()) {
-                  if (other instanceof King) {
+              Piece captured = board.get(target);
+              if (captured != null) {
+                if (captured.colour() != rider.colour()) {
+                  if (captured instanceof King) {
                     return false;
                   } else {
                     if (moves != null) {
@@ -232,21 +230,21 @@ class Pieces {
               origin.rank() + direction.rankOffset());
           if (target.file() >= 1 && target.file() <= 8 && target.rank() >= 1
               && target.rank() <= 8) {
-            Piece other = board.get(target);
-            if (other != null) {
-              if (other.colour() != pawn.colour()) {
-                if (other instanceof King) {
+            Piece captured = board.get(target);
+            if (captured != null) {
+              if (captured.colour() != pawn.colour()) {
+                if (captured instanceof King) {
                   return false;
                 } else {
                   if (origin.rank() == switch (pawn.colour()) {
                     case WHITE -> 7;
                     case BLACK -> 2;
                   }) {
-                    for (Section section : box.keySet()) {
-                      if (section.colour() == pawn.colour()) {
-                        if (moves != null) {
-                          moves.add(new PromotionCapture(origin, target, section));
-                        }
+                    List<Piece> box = List.of(new Queen(pawn.colour()), new Rook(pawn.colour()),
+                        new Bishop(pawn.colour()), new Knight(pawn.colour()));
+                    for (Piece promoted : box) {
+                      if (moves != null) {
+                        moves.add(new PromotionCapture(origin, target, promoted));
                       }
                     }
                   } else {
@@ -280,11 +278,11 @@ class Pieces {
               case WHITE -> 7;
               case BLACK -> 2;
             }) {
-              for (Section section : box.keySet()) {
-                if (section.colour() == pawn.colour()) {
-                  if (moves != null) {
-                    moves.add(new Promotion(origin, target, section));
-                  }
+              List<Piece> box = List.of(new Queen(pawn.colour()), new Rook(pawn.colour()),
+                  new Bishop(pawn.colour()), new Knight(pawn.colour()));
+              for (Piece promoted : box) {
+                if (moves != null) {
+                  moves.add(new Promotion(origin, target, promoted));
                 }
               }
             } else {
@@ -322,8 +320,8 @@ class Pieces {
     };
   }
 
-  static void validatePlacement(Map<Square, Piece> board, Colour sideToMove,
-      Set<Square> castlingOrigins, Square enPassantTarget) {
+  static void validate(Map<Square, Piece> board, Colour sideToMove, Set<Square> castlingOrigins,
+      Square enPassantTarget) {
     for (Colour colour : Colour.values()) {
       int frequency = 0;
       for (Piece piece : board.values()) {
@@ -362,8 +360,8 @@ class Pieces {
     }
   }
 
-  static String toOutput(Map<Square, Piece> board, Colour sideToMove, Set<Square> castlingOrigins,
-      Square enPassantTarget, String operationOutput) {
+  static String format(Map<Square, Piece> board, Colour sideToMove, Set<Square> castlingOrigins,
+      Square enPassantTarget, Operation operation) {
     StringBuilder output = new StringBuilder();
     for (int rank = 8; rank >= 1; rank--) {
       output.append(rank);
@@ -423,7 +421,7 @@ class Pieces {
             output.append('-');
           }
         }
-        case 4 -> output.append("    ").append(operationOutput);
+        case 4 -> output.append("    ").append(Stipulations.toSummary(operation));
       }
       output.append(System.lineSeparator());
     }

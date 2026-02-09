@@ -24,15 +24,11 @@
 
 package blog.art.chess.anecdote;
 
-import blog.art.chess.anecdote.Pieces.Colour;
+import blog.art.chess.anecdote.Pieces.Piece;
 
 class Moves {
 
   record Square(int file, int rank) {
-
-  }
-
-  record Section(Colour colour, int order) {
 
   }
 
@@ -70,11 +66,11 @@ class Moves {
 
   }
 
-  record Promotion(Square origin, Square target, Section section) implements Move {
+  record Promotion(Square origin, Square target, Piece promoted) implements Move {
 
   }
 
-  record PromotionCapture(Square origin, Square target, Section section) implements Move {
+  record PromotionCapture(Square origin, Square target, Piece promoted) implements Move {
 
   }
 

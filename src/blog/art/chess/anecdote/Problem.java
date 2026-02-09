@@ -33,21 +33,20 @@ class Problem {
 
   private static final Logger LOGGER = Logger.getLogger(Problem.class.getName());
 
-  private final Stipulation stipulation;
   private final Position position;
+  private final Stipulation stipulation;
 
-  Problem(Stipulation stipulation, Position position) {
-    this.stipulation = stipulation;
+  Problem(Position position, Stipulation stipulation) {
     this.position = position;
+    this.stipulation = stipulation;
   }
 
   void solve(boolean detailed, boolean verbose) {
-    IO.println("%s%n%s%n".formatted("_".repeat(42),
-        position.toOutput(Stipulations.toOutput(stipulation))));
+    IO.println("%s%n%s%n".formatted("_".repeat(42), Position.toFormatted(position, stipulation)));
     LOGGER.info("Solving...");
     long begin = System.currentTimeMillis();
     Node solution = Stipulations.solve(stipulation, position, detailed, verbose);
-    IO.println(Nodes.toOutput(solution, position));
+    IO.println(Nodes.toFormatted(solution, position));
     long end = System.currentTimeMillis();
     LOGGER.info("Finished solving in %dms.".formatted(end - begin));
   }
@@ -55,6 +54,6 @@ class Problem {
   @Override
   public String toString() {
     return new StringJoiner(", ", Problem.class.getSimpleName() + "[", "]").add(
-        "stipulation=" + stipulation).add("position=" + position).toString();
+        "position=" + position).add("stipulation=" + stipulation).toString();
   }
 }

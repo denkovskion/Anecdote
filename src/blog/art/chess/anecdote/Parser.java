@@ -24,7 +24,6 @@
 
 package blog.art.chess.anecdote;
 
-import blog.art.chess.anecdote.Moves.Section;
 import blog.art.chess.anecdote.Moves.Square;
 import blog.art.chess.anecdote.Pieces.Bishop;
 import blog.art.chess.anecdote.Pieces.Colour;
@@ -56,7 +55,6 @@ class Parser {
     for (String line; (line = IO.readln()) != null; ) {
       if (!line.isBlank()) {
         try (Scanner fields = new Scanner(line)) {
-          Map<String, Piece> pieces = new HashMap<>();
           Map<Square, Piece> board = new HashMap<>();
           try (Scanner characters = new Scanner(fields.next())) {
             characters.useDelimiter("");
@@ -70,57 +68,22 @@ class Parser {
                 }
                 String letter = characters.next("[KQRBNPkqrbnp]");
                 switch (letter) {
-                  case "K" -> board.put(new Square(file, rank),
-                      pieces.computeIfAbsent(letter, _ -> new King(Colour.WHITE)));
-                  case "Q" -> board.put(new Square(file, rank),
-                      pieces.computeIfAbsent(letter, _ -> new Queen(Colour.WHITE)));
-                  case "R" -> board.put(new Square(file, rank),
-                      pieces.computeIfAbsent(letter, _ -> new Rook(Colour.WHITE)));
-                  case "B" -> board.put(new Square(file, rank),
-                      pieces.computeIfAbsent(letter, _ -> new Bishop(Colour.WHITE)));
-                  case "N" -> board.put(new Square(file, rank),
-                      pieces.computeIfAbsent(letter, _ -> new Knight(Colour.WHITE)));
-                  case "P" -> board.put(new Square(file, rank),
-                      pieces.computeIfAbsent(letter, _ -> new Pawn(Colour.WHITE)));
-                  case "k" -> board.put(new Square(file, rank),
-                      pieces.computeIfAbsent(letter, _ -> new King(Colour.BLACK)));
-                  case "q" -> board.put(new Square(file, rank),
-                      pieces.computeIfAbsent(letter, _ -> new Queen(Colour.BLACK)));
-                  case "r" -> board.put(new Square(file, rank),
-                      pieces.computeIfAbsent(letter, _ -> new Rook(Colour.BLACK)));
-                  case "b" -> board.put(new Square(file, rank),
-                      pieces.computeIfAbsent(letter, _ -> new Bishop(Colour.BLACK)));
-                  case "n" -> board.put(new Square(file, rank),
-                      pieces.computeIfAbsent(letter, _ -> new Knight(Colour.BLACK)));
-                  case "p" -> board.put(new Square(file, rank),
-                      pieces.computeIfAbsent(letter, _ -> new Pawn(Colour.BLACK)));
+                  case "K" -> board.put(new Square(file, rank), new King(Colour.WHITE));
+                  case "Q" -> board.put(new Square(file, rank), new Queen(Colour.WHITE));
+                  case "R" -> board.put(new Square(file, rank), new Rook(Colour.WHITE));
+                  case "B" -> board.put(new Square(file, rank), new Bishop(Colour.WHITE));
+                  case "N" -> board.put(new Square(file, rank), new Knight(Colour.WHITE));
+                  case "P" -> board.put(new Square(file, rank), new Pawn(Colour.WHITE));
+                  case "k" -> board.put(new Square(file, rank), new King(Colour.BLACK));
+                  case "q" -> board.put(new Square(file, rank), new Queen(Colour.BLACK));
+                  case "r" -> board.put(new Square(file, rank), new Rook(Colour.BLACK));
+                  case "b" -> board.put(new Square(file, rank), new Bishop(Colour.BLACK));
+                  case "n" -> board.put(new Square(file, rank), new Knight(Colour.BLACK));
+                  case "p" -> board.put(new Square(file, rank), new Pawn(Colour.BLACK));
                 }
               }
               characters.skip(rank > 1 ? "/" : "$");
             }
-          }
-          Map<Section, Piece> box = new HashMap<>();
-          if (pieces.containsKey("P")) {
-            int order = 0;
-            box.put(new Section(Colour.WHITE, ++order),
-                pieces.computeIfAbsent("Q", _ -> new Queen(Colour.WHITE)));
-            box.put(new Section(Colour.WHITE, ++order),
-                pieces.computeIfAbsent("R", _ -> new Rook(Colour.WHITE)));
-            box.put(new Section(Colour.WHITE, ++order),
-                pieces.computeIfAbsent("B", _ -> new Bishop(Colour.WHITE)));
-            box.put(new Section(Colour.WHITE, ++order),
-                pieces.computeIfAbsent("N", _ -> new Knight(Colour.WHITE)));
-          }
-          if (pieces.containsKey("p")) {
-            int order = 0;
-            box.put(new Section(Colour.BLACK, ++order),
-                pieces.computeIfAbsent("q", _ -> new Queen(Colour.BLACK)));
-            box.put(new Section(Colour.BLACK, ++order),
-                pieces.computeIfAbsent("r", _ -> new Rook(Colour.BLACK)));
-            box.put(new Section(Colour.BLACK, ++order),
-                pieces.computeIfAbsent("b", _ -> new Bishop(Colour.BLACK)));
-            box.put(new Section(Colour.BLACK, ++order),
-                pieces.computeIfAbsent("n", _ -> new Knight(Colour.BLACK)));
           }
           Colour sideToMove = null;
           switch (fields.next("[wb]")) {
@@ -159,15 +122,17 @@ class Parser {
               fields.next("(0|[1-9]\\d*);");
               int nPlies = Integer.parseInt(fields.match().group(1));
               fields.skip("\\s*$");
-              problems.add(new Problem(new Perft(nPlies),
-                  new Position(board, box, sideToMove, castlingOrigins, enPassantTarget)));
+              problems.add(
+                  new Problem(new Position(board, sideToMove, castlingOrigins, enPassantTarget),
+                      new Perft(nPlies)));
             }
             case "dm" -> {
               fields.next("([1-9]\\d*);");
               int nMoves = Integer.parseInt(fields.match().group(1));
               fields.skip("\\s*$");
-              problems.add(new Problem(new MateSearch(nMoves),
-                  new Position(board, box, sideToMove, castlingOrigins, enPassantTarget)));
+              problems.add(
+                  new Problem(new Position(board, sideToMove, castlingOrigins, enPassantTarget),
+                      new MateSearch(nMoves)));
             }
           }
         } catch (IllegalArgumentException ex) {

@@ -25,6 +25,8 @@
 package blog.art.chess.anecdote;
 
 import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 class Anecdote {
@@ -32,6 +34,7 @@ class Anecdote {
   private static final Logger LOGGER = Logger.getLogger(Anecdote.class.getName());
 
   static void main(String[] args) {
+    configureLogging();
     boolean version = false;
     boolean help = false;
     boolean detailed = false;
@@ -95,7 +98,22 @@ class Anecdote {
       if (version != null) {
         return version;
       }
+      return "(development)";
     }
-    return "(development)";
+    return "(unknown)";
+  }
+
+  private static void configureLogging() {
+    Logger root = Logger.getLogger("");
+    Package pkg = Anecdote.class.getPackage();
+    if (pkg != null) {
+      root.setLevel(Level.INFO);
+      Logger.getLogger(pkg.getName()).setLevel(Level.FINE);
+    } else {
+      root.setLevel(Level.FINE);
+    }
+    for (Handler handler : root.getHandlers()) {
+      handler.setLevel(Level.FINE);
+    }
   }
 }

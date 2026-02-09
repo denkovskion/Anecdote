@@ -40,7 +40,11 @@ class Stipulations {
 
   private static final Logger LOGGER = Logger.getLogger(Stipulations.class.getName());
 
-  sealed interface Stipulation {
+  sealed interface Operation {
+
+  }
+
+  sealed interface Stipulation extends Operation {
 
   }
 
@@ -87,7 +91,7 @@ class Stipulations {
         }
         nNodes += nChildNodes;
         if (verbose) {
-          LOGGER.info(
+          LOGGER.fine(
               "Evaluated '%s'. Counted %d nodes at depth %d.".formatted(lanBuilder, nChildNodes,
                   nPlies));
         }
@@ -95,7 +99,7 @@ class Stipulations {
       position.unmakeMove();
     }
     if (verbose) {
-      LOGGER.info("Finished counting. %d nodes at depth %d.".formatted(nNodes, nPlies));
+      LOGGER.fine("Finished counting. %d nodes at depth %d.".formatted(nNodes, nPlies));
     }
     return nNodes;
   }
@@ -111,7 +115,7 @@ class Stipulations {
         if (min > 0) {
           int distanceMax = nMoves - min + 1;
           if (verbose) {
-            LOGGER.info("Tried '%s'. Found mate in %d.".formatted(lanBuilder, distanceMax));
+            LOGGER.fine("Tried '%s'. Found mate in %d.".formatted(lanBuilder, distanceMax));
           }
           if (detailed) {
             List<Node> nodesMin = new ArrayList<>();
@@ -130,14 +134,14 @@ class Stipulations {
                 Comparator.comparingInt(node -> ((MateBranch) node).distance()).reversed());
             nodes.add(new MateBranch(moveMax, distanceMax, nodesMin));
             if (verbose) {
-              LOGGER.info("Finished analysis of '%s'.".formatted(lanBuilder));
+              LOGGER.fine("Finished analysis of '%s'.".formatted(lanBuilder));
             }
           } else {
             nodes.add(new MateLeaf(moveMax, distanceMax));
           }
         } else {
           if (verbose) {
-            LOGGER.info("Tried '%s'. No mate in %d.".formatted(lanBuilder, nMoves));
+            LOGGER.fine("Tried '%s'. No mate in %d.".formatted(lanBuilder, nMoves));
           }
         }
       }
@@ -199,8 +203,8 @@ class Stipulations {
     return min;
   }
 
-  static String toOutput(Stipulation stipulation) {
-    return switch (stipulation) {
+  static String toSummary(Operation operation) {
+    return switch (operation) {
       case Perft(int nPlies) -> "Perft at depth %d".formatted(nPlies);
       case MateSearch(int nMoves) -> "Mate in %d".formatted(nMoves);
     };
