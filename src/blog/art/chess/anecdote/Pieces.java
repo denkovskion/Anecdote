@@ -35,6 +35,7 @@ import blog.art.chess.anecdote.Moves.QuietMove;
 import blog.art.chess.anecdote.Moves.ShortCastling;
 import blog.art.chess.anecdote.Moves.Square;
 import blog.art.chess.anecdote.Stipulations.Operation;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -360,75 +361,78 @@ class Pieces {
     }
   }
 
-  static String format(Map<Square, Piece> board, Colour sideToMove, Set<Square> castlingOrigins,
-      Square enPassantTarget, Operation operation) {
-    StringBuilder output = new StringBuilder();
+  static String toFormatted(Map<Square, Piece> board, Colour sideToMove,
+      Set<Square> castlingOrigins, Square enPassantTarget, Operation operation) {
+    List<String> args = new ArrayList<>();
     for (int rank = 8; rank >= 1; rank--) {
-      output.append(rank);
       for (int file = 1; file <= 8; file++) {
-        output.append(' ');
         Piece piece = board.get(new Square(file, rank));
         if (piece != null) {
-          char code = switch (piece) {
-            case King _ -> 'K';
-            case Queen _ -> 'Q';
-            case Rook _ -> 'R';
-            case Bishop _ -> 'B';
-            case Knight _ -> 'N';
-            case Pawn _ -> 'P';
+          String code = switch (piece) {
+            case King _ -> "K";
+            case Queen _ -> "Q";
+            case Rook _ -> "R";
+            case Bishop _ -> "B";
+            case Knight _ -> "N";
+            case Pawn _ -> "P";
           };
-          output.append(switch (piece.colour()) {
-            case WHITE -> Character.toUpperCase(code);
-            case BLACK -> Character.toLowerCase(code);
+          args.add(switch (piece.colour()) {
+            case WHITE -> code.toUpperCase();
+            case BLACK -> code.toLowerCase();
           });
         } else {
-          output.append('.');
+          args.add(".");
         }
       }
       switch (rank) {
-        case 8 -> output.append("    Side to move: ").append(switch (sideToMove) {
-          case WHITE -> 'w';
-          case BLACK -> 'b';
+        case 8 -> args.add(switch (sideToMove) {
+          case WHITE -> "w";
+          case BLACK -> "b";
         });
         case 7 -> {
-          output.append("    Castling rights: ");
           if (!castlingOrigins.isEmpty()) {
+            StringBuilder arg = new StringBuilder();
             if (castlingOrigins.contains(new Square(5, 1))) {
               if (castlingOrigins.contains(new Square(8, 1))) {
-                output.append('K');
+                arg.append("K");
               }
               if (castlingOrigins.contains(new Square(1, 1))) {
-                output.append('Q');
+                arg.append("Q");
               }
             }
             if (castlingOrigins.contains(new Square(5, 8))) {
               if (castlingOrigins.contains(new Square(8, 8))) {
-                output.append('k');
+                arg.append("k");
               }
               if (castlingOrigins.contains(new Square(1, 8))) {
-                output.append('q');
+                arg.append("q");
               }
             }
+            args.add(arg.toString());
           } else {
-            output.append('-');
+            args.add("-");
           }
         }
         case 6 -> {
-          output.append("    En passant target: ");
           if (enPassantTarget != null) {
-            output.append((char) ('a' + enPassantTarget.file() - 1)).append(enPassantTarget.rank());
+            args.add("" + (char) ('a' + enPassantTarget.file() - 1) + (char) (
+                '1' + enPassantTarget.rank() - 1));
           } else {
-            output.append('-');
+            args.add("-");
           }
         }
-        case 4 -> output.append("    ").append(Stipulations.toSummary(operation));
+        case 4 -> args.add(Stipulations.toSummary(operation));
       }
-      output.append(System.lineSeparator());
     }
-    output.append(' ');
-    for (char file = 'a'; file <= 'h'; file++) {
-      output.append(' ').append(file);
-    }
-    return output.toString();
+    return """
+        8 %s %s %s %s %s %s %s %s    Side to move: %s
+        7 %s %s %s %s %s %s %s %s    Castling rights: %s
+        6 %s %s %s %s %s %s %s %s    En passant target: %s
+        5 %s %s %s %s %s %s %s %s
+        4 %s %s %s %s %s %s %s %s    %s
+        3 %s %s %s %s %s %s %s %s
+        2 %s %s %s %s %s %s %s %s
+        1 %s %s %s %s %s %s %s %s
+          a b c d e f g h""".formatted(args.toArray());
   }
 }

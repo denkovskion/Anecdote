@@ -131,8 +131,8 @@ class Position {
         boolean result = makeMove(nullMove, null, null);
         unmakeMove();
         if (result) {
-          Move stopMove = new QuietMove(origin, target2);
-          result = makeMove(stopMove, null, null);
+          Move quietMove = new QuietMove(origin, target2);
+          result = makeMove(quietMove, null, null);
           unmakeMove();
         }
         board.put(target, board.remove(origin));
@@ -150,8 +150,8 @@ class Position {
         boolean result = makeMove(nullMove, null, null);
         unmakeMove();
         if (result) {
-          Move stopMove = new QuietMove(origin, target2);
-          result = makeMove(stopMove, null, null);
+          Move quietMove = new QuietMove(origin, target2);
+          result = makeMove(quietMove, null, null);
           unmakeMove();
         }
         board.put(target, board.remove(origin));
@@ -224,8 +224,8 @@ class Position {
           }
         }
         boolean terminal = true;
-        for (Move nextMove : pseudoLegalMovesNext) {
-          if (makeMove(nextMove, null, null)) {
+        for (Move moveNext : pseudoLegalMovesNext) {
+          if (makeMove(moveNext, null, null)) {
             terminal = false;
           }
           unmakeMove();
@@ -279,7 +279,7 @@ class Position {
   }
 
   static String toFormatted(Position position, Operation operation) {
-    return Pieces.format(position.board, position.sideToMove, position.castlingOrigins,
+    return Pieces.toFormatted(position.board, position.sideToMove, position.castlingOrigins,
         position.enPassantTarget, operation);
   }
 

@@ -42,7 +42,9 @@ class Problem {
   }
 
   void solve(boolean detailed, boolean verbose) {
-    IO.println("%s%n%s%n".formatted("_".repeat(42), Position.toFormatted(position, stipulation)));
+    IO.println("_".repeat(42));
+    IO.println(Position.toFormatted(position, stipulation));
+    IO.println();
     LOGGER.info("Solving...");
     long begin = System.currentTimeMillis();
     Node solution = Stipulations.solve(stipulation, position, detailed, verbose);
