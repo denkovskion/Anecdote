@@ -33,7 +33,15 @@ class Nodes {
 
   }
 
-  record CountNode(Move move, long count, List<Node> children) implements Node {
+  record DivideRoot(long count, List<Node> children) implements Node {
+
+  }
+
+  record DivideLeaf(Move move, long count) implements Node {
+
+  }
+
+  record PerftNode(long count) implements Node {
 
   }
 
@@ -62,22 +70,18 @@ class Nodes {
   private static void format(Node node, Position position, StringBuilder output, int moveNo,
       boolean inline) {
     switch (node) {
-      case CountNode(Move move, long count, List<Node> children) -> {
-        if (move != null) {
-          position.makeMove(move, null, output);
-          output.append(" ");
-        }
-        if (children != null) {
-          for (Node child : children) {
-            format(child, position, output, moveNo, false);
-            output.append(System.lineSeparator());
-          }
+      case DivideRoot(long count, List<Node> children) -> {
+        for (Node child : children) {
+          format(child, position, output, moveNo, false);
+          output.append(System.lineSeparator());
         }
         output.append(count);
-        if (move != null) {
-          position.unmakeMove();
-        }
       }
+      case DivideLeaf(Move move, long count) -> {
+        new Position(position).makeMove(move, null, output);
+        output.append(" ").append(count);
+      }
+      case PerftNode(long count) -> output.append(count);
       case MateRoot(List<Node> children) -> {
         boolean first = true;
         for (Node child : children) {
@@ -97,30 +101,29 @@ class Nodes {
             }
           }
         }
-        position.makeMove(move, null, output);
+        Position positionNext = new Position(position);
+        positionNext.makeMove(move, null, output);
         boolean first = true;
         for (Node child : children) {
           if (first) {
             output.append(" ");
           } else {
             output.append(System.lineSeparator())
-                .append("\t".repeat(switch (position.getSideToMove()) {
+                .append("\t".repeat(switch (positionNext.getSideToMove()) {
                   case WHITE -> moveNo;
                   case BLACK -> moveNo - 1;
                 }));
           }
-          format(child, position, output, switch (position.getSideToMove()) {
+          format(child, positionNext, output, switch (positionNext.getSideToMove()) {
             case WHITE -> moveNo + 1;
             case BLACK -> moveNo;
           }, first);
           first = false;
         }
-        position.unmakeMove();
       }
       case MateLeaf(Move move, int distance) -> {
-        position.makeMove(move, null, output);
+        new Position(position).makeMove(move, null, output);
         output.append(" [#").append(distance).append("]");
-        position.unmakeMove();
       }
       case IllegalNode() -> output.append("Illegal position");
     }

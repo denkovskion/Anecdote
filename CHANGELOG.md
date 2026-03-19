@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.0] - 2026-03-19
+
+### Changed
+
+- State history structure is replaced with the copy-make approach
+
 ## [1.1.1] - 2026-03-10
 
 - Maintenance release

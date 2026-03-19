@@ -25,12 +25,15 @@
 package blog.art.chess.anecdote;
 
 import blog.art.chess.anecdote.Moves.Move;
-import blog.art.chess.anecdote.Nodes.CountNode;
+import blog.art.chess.anecdote.Moves.NullMove;
+import blog.art.chess.anecdote.Nodes.DivideLeaf;
+import blog.art.chess.anecdote.Nodes.DivideRoot;
 import blog.art.chess.anecdote.Nodes.IllegalNode;
 import blog.art.chess.anecdote.Nodes.MateBranch;
 import blog.art.chess.anecdote.Nodes.MateLeaf;
 import blog.art.chess.anecdote.Nodes.MateRoot;
 import blog.art.chess.anecdote.Nodes.Node;
+import blog.art.chess.anecdote.Nodes.PerftNode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -63,7 +66,7 @@ class Stipulations {
         case Perft(int nPlies) -> {
           List<Node> nodes = detailed ? new ArrayList<>() : null;
           long nNodes = count(nPlies, position, pseudoLegalMoves, nodes, verbose);
-          return new CountNode(null, nNodes, nodes);
+          return detailed ? new DivideRoot(nNodes, nodes) : new PerftNode(nNodes);
         }
         case MateSearch(int nMoves) -> {
           List<Node> nodes = analyse(nMoves, position, pseudoLegalMoves, detailed, verbose);
@@ -82,12 +85,13 @@ class Stipulations {
     }
     long nNodes = 0;
     for (Move move : pseudoLegalMoves) {
+      Position positionNext = new Position(position);
       List<Move> pseudoLegalMovesNext = new ArrayList<>();
       StringBuilder lanBuilder = verbose ? new StringBuilder() : null;
-      if (position.makeMove(move, pseudoLegalMovesNext, lanBuilder)) {
-        long nChildNodes = count(nPlies - 1, position, pseudoLegalMovesNext, null, false);
+      if (positionNext.makeMove(move, pseudoLegalMovesNext, lanBuilder)) {
+        long nChildNodes = count(nPlies - 1, positionNext, pseudoLegalMovesNext, null, false);
         if (nodes != null) {
-          nodes.add(new CountNode(move, nChildNodes, null));
+          nodes.add(new DivideLeaf(move, nChildNodes));
         }
         nNodes += nChildNodes;
         if (verbose) {
@@ -96,7 +100,6 @@ class Stipulations {
                   nPlies));
         }
       }
-      position.unmakeMove();
     }
     if (verbose) {
       LOGGER.fine("Finished counting. %d nodes at depth %d.".formatted(nNodes, nPlies));
@@ -108,10 +111,11 @@ class Stipulations {
       boolean detailed, boolean verbose) {
     List<Node> nodes = new ArrayList<>();
     for (Move moveMax : pseudoLegalMoves) {
+      Position positionMin = new Position(position);
       List<Move> pseudoLegalMovesMin = new ArrayList<>();
       StringBuilder lanBuilder = verbose ? new StringBuilder() : null;
-      if (position.makeMove(moveMax, pseudoLegalMovesMin, lanBuilder)) {
-        int min = searchMin(nMoves, position, pseudoLegalMovesMin);
+      if (positionMin.makeMove(moveMax, pseudoLegalMovesMin, lanBuilder)) {
+        int min = searchMin(nMoves, positionMin, pseudoLegalMovesMin);
         if (min > 0) {
           int distanceMax = nMoves - min + 1;
           if (verbose) {
@@ -120,15 +124,15 @@ class Stipulations {
           if (detailed) {
             List<Node> nodesMin = new ArrayList<>();
             for (Move moveMin : pseudoLegalMovesMin) {
+              Position positionMax = new Position(positionMin);
               List<Move> pseudoLegalMovesMax = new ArrayList<>();
-              if (position.makeMove(moveMin, pseudoLegalMovesMax, null)) {
-                int max = searchMax(distanceMax - 1, position, pseudoLegalMovesMax);
+              if (positionMax.makeMove(moveMin, pseudoLegalMovesMax, null)) {
+                int max = searchMax(distanceMax - 1, positionMax, pseudoLegalMovesMax);
                 int distanceMin = distanceMax - max;
-                List<Node> nodesMax = analyse(distanceMin, position, pseudoLegalMovesMax, true,
+                List<Node> nodesMax = analyse(distanceMin, positionMax, pseudoLegalMovesMax, true,
                     false);
                 nodesMin.add(new MateBranch(moveMin, distanceMin, nodesMax));
               }
-              position.unmakeMove();
             }
             nodesMin.sort(
                 Comparator.comparingInt(node -> ((MateBranch) node).distance()).reversed());
@@ -145,7 +149,6 @@ class Stipulations {
           }
         }
       }
-      position.unmakeMove();
     }
     nodes.sort(Comparator.comparingInt(
         node -> detailed ? ((MateBranch) node).distance() : ((MateLeaf) node).distance()));
@@ -155,16 +158,16 @@ class Stipulations {
   private static int searchMax(int nMoves, Position position, List<Move> pseudoLegalMovesMax) {
     int max = -1;
     for (Move move : pseudoLegalMovesMax) {
+      Position positionMin = new Position(position);
       List<Move> pseudoLegalMovesMin = new ArrayList<>();
-      if (position.makeMove(move, pseudoLegalMovesMin, null)) {
-        int min = searchMin(nMoves, position, pseudoLegalMovesMin);
+      if (positionMin.makeMove(move, pseudoLegalMovesMin, null)) {
+        int min = searchMin(nMoves, positionMin, pseudoLegalMovesMin);
         if (min > max) {
           max = min;
         }
-      }
-      position.unmakeMove();
-      if (max == nMoves) {
-        break;
+        if (max == nMoves) {
+          break;
+        }
       }
     }
     return max;
@@ -174,31 +177,28 @@ class Stipulations {
     int min = 0;
     if (nMoves == 1) {
       for (Move move : pseudoLegalMovesMin) {
-        if (position.makeMove(move, null, null)) {
+        if (new Position(position).makeMove(move, null, null)) {
           min = -1;
-        }
-        position.unmakeMove();
-        if (min == -1) {
           break;
         }
       }
     } else {
       for (Move move : pseudoLegalMovesMin) {
+        Position positionMax = new Position(position);
         List<Move> pseudoLegalMovesMax = new ArrayList<>();
-        if (position.makeMove(move, pseudoLegalMovesMax, null)) {
-          int max = searchMax(nMoves - 1, position, pseudoLegalMovesMax);
+        if (positionMax.makeMove(move, pseudoLegalMovesMax, null)) {
+          int max = searchMax(nMoves - 1, positionMax, pseudoLegalMovesMax);
           if (min == 0 || max < min) {
             min = max;
           }
-        }
-        position.unmakeMove();
-        if (min == -1) {
-          break;
+          if (min == -1) {
+            break;
+          }
         }
       }
     }
     if (min == 0) {
-      min = position.isCheck() ? nMoves : -1;
+      min = new Position(position).makeMove(new NullMove(), null, null) ? -1 : nMoves;
     }
     return min;
   }

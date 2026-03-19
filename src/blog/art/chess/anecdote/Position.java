@@ -38,10 +38,8 @@ import blog.art.chess.anecdote.Moves.Square;
 import blog.art.chess.anecdote.Pieces.Colour;
 import blog.art.chess.anecdote.Pieces.Piece;
 import blog.art.chess.anecdote.Stipulations.Operation;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -52,16 +50,10 @@ import java.util.TreeMap;
 
 class Position {
 
-  private record State(SortedMap<Square, Piece> board, Colour sideToMove,
-                       Set<Square> castlingOrigins, Square enPassantTarget) {
-
-  }
-
-  private SortedMap<Square, Piece> board;
+  private final SortedMap<Square, Piece> board;
   private Colour sideToMove;
-  private Set<Square> castlingOrigins;
+  private final Set<Square> castlingOrigins;
   private Square enPassantTarget;
-  private final Deque<State> memory;
 
   Position(Map<Square, Piece> board, Colour sideToMove, Set<Square> castlingOrigins,
       Square enPassantTarget) {
@@ -72,7 +64,13 @@ class Position {
     this.sideToMove = sideToMove;
     this.castlingOrigins = new HashSet<>(castlingOrigins);
     this.enPassantTarget = enPassantTarget;
-    this.memory = new ArrayDeque<>();
+  }
+
+  Position(Position other) {
+    this.board = new TreeMap<>(other.board);
+    this.sideToMove = other.sideToMove;
+    this.castlingOrigins = new HashSet<>(other.castlingOrigins);
+    this.enPassantTarget = other.enPassantTarget;
   }
 
   Colour getSideToMove() {
@@ -92,8 +90,6 @@ class Position {
   }
 
   boolean makeMove(Move move, List<Move> pseudoLegalMoves, StringBuilder lanBuilder) {
-    memory.addFirst(new State(new TreeMap<>(board), sideToMove, new HashSet<>(castlingOrigins),
-        enPassantTarget));
     boolean legal = switch (move) {
       case NullMove() -> {
         if (lanBuilder != null) {
@@ -127,13 +123,9 @@ class Position {
         if (lanBuilder != null) {
           lanBuilder.append("0-0-0");
         }
-        Move nullMove = new NullMove();
-        boolean result = makeMove(nullMove, null, null);
-        unmakeMove();
+        boolean result = new Position(this).makeMove(new NullMove(), null, null);
         if (result) {
-          Move quietMove = new QuietMove(origin, target2);
-          result = makeMove(quietMove, null, null);
-          unmakeMove();
+          result = new Position(this).makeMove(new QuietMove(origin, target2), null, null);
         }
         board.put(target, board.remove(origin));
         board.put(target2, board.remove(origin2));
@@ -146,13 +138,9 @@ class Position {
         if (lanBuilder != null) {
           lanBuilder.append("0-0");
         }
-        Move nullMove = new NullMove();
-        boolean result = makeMove(nullMove, null, null);
-        unmakeMove();
+        boolean result = new Position(this).makeMove(new NullMove(), null, null);
         if (result) {
-          Move quietMove = new QuietMove(origin, target2);
-          result = makeMove(quietMove, null, null);
-          unmakeMove();
+          result = new Position(this).makeMove(new QuietMove(origin, target2), null, null);
         }
         board.put(target, board.remove(origin));
         board.put(target2, board.remove(origin2));
@@ -225,25 +213,22 @@ class Position {
         }
         boolean terminal = true;
         for (Move moveNext : pseudoLegalMovesNext) {
-          if (makeMove(moveNext, null, null)) {
+          if (new Position(this).makeMove(moveNext, null, null)) {
             terminal = false;
-          }
-          unmakeMove();
-          if (!terminal) {
             break;
           }
         }
         int nChecks = 0;
-        Move nullMove = new NullMove();
-        makeMove(nullMove, null, null);
-        for (Map.Entry<Square, Piece> entry : board.entrySet()) {
-          if (entry.getValue().colour() == sideToMove) {
-            if (!Pieces.generateMoves(entry, board, castlingOrigins, enPassantTarget, null)) {
+        Position opposite = new Position(this);
+        opposite.makeMove(new NullMove(), null, null);
+        for (Map.Entry<Square, Piece> entry : opposite.board.entrySet()) {
+          if (entry.getValue().colour() == opposite.sideToMove) {
+            if (!Pieces.generateMoves(entry, opposite.board, opposite.castlingOrigins,
+                opposite.enPassantTarget, null)) {
               nChecks++;
             }
           }
         }
-        unmakeMove();
         if (terminal) {
           if (nChecks > 0) {
             if (nChecks > 1) {
@@ -263,21 +248,6 @@ class Position {
     return legal;
   }
 
-  void unmakeMove() {
-    State state = memory.removeFirst();
-    sideToMove = state.sideToMove();
-    enPassantTarget = state.enPassantTarget();
-    castlingOrigins = state.castlingOrigins();
-    board = state.board();
-  }
-
-  boolean isCheck() {
-    Move nullMove = new NullMove();
-    boolean check = !makeMove(nullMove, null, null);
-    unmakeMove();
-    return check;
-  }
-
   static String toFormatted(Position position, Operation operation) {
     return Pieces.toFormatted(position.board, position.sideToMove, position.castlingOrigins,
         position.enPassantTarget, operation);
@@ -287,6 +257,6 @@ class Position {
   public String toString() {
     return new StringJoiner(", ", Position.class.getSimpleName() + "[", "]").add("board=" + board)
         .add("sideToMove=" + sideToMove).add("castlingOrigins=" + castlingOrigins)
-        .add("enPassantTarget=" + enPassantTarget).add("memory=" + memory).toString();
+        .add("enPassantTarget=" + enPassantTarget).toString();
   }
 }
