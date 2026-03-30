@@ -37,7 +37,6 @@ import blog.art.chess.anecdote.Moves.ShortCastling;
 import blog.art.chess.anecdote.Moves.Square;
 import blog.art.chess.anecdote.Pieces.Colour;
 import blog.art.chess.anecdote.Pieces.Piece;
-import blog.art.chess.anecdote.Stipulations.Operation;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -123,31 +122,31 @@ class Position {
         if (lanBuilder != null) {
           lanBuilder.append("0-0-0");
         }
-        boolean result = new Position(this).makeMove(new NullMove(), null, null);
-        if (result) {
-          result = new Position(this).makeMove(new QuietMove(origin, target2), null, null);
+        boolean preLegal = new Position(this).makeMove(new NullMove(), null, null);
+        if (preLegal) {
+          preLegal = new Position(this).makeMove(new QuietMove(origin, target2), null, null);
         }
         board.put(target, board.remove(origin));
         board.put(target2, board.remove(origin2));
         castlingOrigins.remove(origin);
         castlingOrigins.remove(origin2);
         enPassantTarget = null;
-        yield result;
+        yield preLegal;
       }
       case ShortCastling(Square origin, Square target, Square origin2, Square target2) -> {
         if (lanBuilder != null) {
           lanBuilder.append("0-0");
         }
-        boolean result = new Position(this).makeMove(new NullMove(), null, null);
-        if (result) {
-          result = new Position(this).makeMove(new QuietMove(origin, target2), null, null);
+        boolean preLegal = new Position(this).makeMove(new NullMove(), null, null);
+        if (preLegal) {
+          preLegal = new Position(this).makeMove(new QuietMove(origin, target2), null, null);
         }
         board.put(target, board.remove(origin));
         board.put(target2, board.remove(origin2));
         castlingOrigins.remove(origin);
         castlingOrigins.remove(origin2);
         enPassantTarget = null;
-        yield result;
+        yield preLegal;
       }
       case DoubleStep(Square origin, Square target, Square stop) -> {
         if (lanBuilder != null) {
@@ -232,7 +231,7 @@ class Position {
         if (terminal) {
           if (nChecks > 0) {
             if (nChecks > 1) {
-              lanBuilder.append("+".repeat(nChecks));
+              lanBuilder.repeat("+", nChecks);
             }
             lanBuilder.append("#");
           } else {
@@ -240,7 +239,7 @@ class Position {
           }
         } else {
           if (nChecks > 0) {
-            lanBuilder.append("+".repeat(nChecks));
+            lanBuilder.repeat("+", nChecks);
           }
         }
       }
@@ -248,7 +247,7 @@ class Position {
     return legal;
   }
 
-  static String toFormatted(Position position, Operation operation) {
+  static String toFormatted(Position position, String operation) {
     return Pieces.toFormatted(position.board, position.sideToMove, position.castlingOrigins,
         position.enPassantTarget, operation);
   }

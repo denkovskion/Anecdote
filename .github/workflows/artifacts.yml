@@ -13,9 +13,9 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '25'
@@ -38,10 +38,11 @@ jobs:
           jar cvfm "$REPO_NAME.jar" MANIFEST.MF -C bin .
 
           mkdir -p "$DIR_NAME"
-          cp "$REPO_NAME.jar" LICENSE README.md CHANGELOG.md "$DIR_NAME/"
+          cp "$REPO_NAME.jar" LICENSE *.md "$DIR_NAME/"
 
           zip -r "$DIR_NAME.zip" "$DIR_NAME"
 
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: "*.zip"
+      - name: Upload asset
+        run: gh release upload "$GITHUB_REF_NAME" *.zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

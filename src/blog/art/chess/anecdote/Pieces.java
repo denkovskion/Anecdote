@@ -34,7 +34,6 @@ import blog.art.chess.anecdote.Moves.PromotionCapture;
 import blog.art.chess.anecdote.Moves.QuietMove;
 import blog.art.chess.anecdote.Moves.ShortCastling;
 import blog.art.chess.anecdote.Moves.Square;
-import blog.art.chess.anecdote.Stipulations.Operation;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -362,7 +361,7 @@ class Pieces {
   }
 
   static String toFormatted(Map<Square, Piece> board, Colour sideToMove,
-      Set<Square> castlingOrigins, Square enPassantTarget, Operation operation) {
+      Set<Square> castlingOrigins, Square enPassantTarget, String operation) {
     List<String> args = new ArrayList<>();
     for (int rank = 8; rank >= 1; rank--) {
       for (int file = 1; file <= 8; file++) {
@@ -421,18 +420,14 @@ class Pieces {
             args.add("-");
           }
         }
-        case 4 -> args.add(Stipulations.toSummary(operation));
+        case 4 -> args.add(operation);
       }
     }
-    return """
-        8 %s %s %s %s %s %s %s %s    Side to move: %s
-        7 %s %s %s %s %s %s %s %s    Castling rights: %s
-        6 %s %s %s %s %s %s %s %s    En passant target: %s
-        5 %s %s %s %s %s %s %s %s
-        4 %s %s %s %s %s %s %s %s    %s
-        3 %s %s %s %s %s %s %s %s
-        2 %s %s %s %s %s %s %s %s
-        1 %s %s %s %s %s %s %s %s
-          a b c d e f g h""".formatted(args.toArray());
+    return ("8 %s %s %s %s %s %s %s %s    Side to move: %s%n"
+        + "7 %s %s %s %s %s %s %s %s    Castling rights: %s%n"
+        + "6 %s %s %s %s %s %s %s %s    En passant target: %s%n" + "5 %s %s %s %s %s %s %s %s%n"
+        + "4 %s %s %s %s %s %s %s %s    %s%n" + "3 %s %s %s %s %s %s %s %s%n"
+        + "2 %s %s %s %s %s %s %s %s%n" + "1 %s %s %s %s %s %s %s %s%n"
+        + "  a b c d e f g h").formatted(args.toArray());
   }
 }

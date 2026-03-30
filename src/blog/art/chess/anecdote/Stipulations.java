@@ -43,11 +43,7 @@ class Stipulations {
 
   private static final Logger LOGGER = Logger.getLogger(Stipulations.class.getName());
 
-  sealed interface Operation {
-
-  }
-
-  sealed interface Stipulation extends Operation {
+  sealed interface Stipulation {
 
   }
 
@@ -155,56 +151,56 @@ class Stipulations {
     return nodes;
   }
 
-  private static int searchMax(int nMoves, Position position, List<Move> pseudoLegalMovesMax) {
+  private static int searchMax(int nMoves, Position positionMax, List<Move> pseudoLegalMovesMax) {
     int max = -1;
-    for (Move move : pseudoLegalMovesMax) {
-      Position positionMin = new Position(position);
+    for (Move moveMax : pseudoLegalMovesMax) {
+      Position positionMin = new Position(positionMax);
       List<Move> pseudoLegalMovesMin = new ArrayList<>();
-      if (positionMin.makeMove(move, pseudoLegalMovesMin, null)) {
+      if (positionMin.makeMove(moveMax, pseudoLegalMovesMin, null)) {
         int min = searchMin(nMoves, positionMin, pseudoLegalMovesMin);
         if (min > max) {
           max = min;
-        }
-        if (max == nMoves) {
-          break;
+          if (max == nMoves) {
+            break;
+          }
         }
       }
     }
     return max;
   }
 
-  private static int searchMin(int nMoves, Position position, List<Move> pseudoLegalMovesMin) {
+  private static int searchMin(int nMoves, Position positionMin, List<Move> pseudoLegalMovesMin) {
     int min = 0;
     if (nMoves == 1) {
-      for (Move move : pseudoLegalMovesMin) {
-        if (new Position(position).makeMove(move, null, null)) {
+      for (Move moveMin : pseudoLegalMovesMin) {
+        if (new Position(positionMin).makeMove(moveMin, null, null)) {
           min = -1;
           break;
         }
       }
     } else {
-      for (Move move : pseudoLegalMovesMin) {
-        Position positionMax = new Position(position);
+      for (Move moveMin : pseudoLegalMovesMin) {
+        Position positionMax = new Position(positionMin);
         List<Move> pseudoLegalMovesMax = new ArrayList<>();
-        if (positionMax.makeMove(move, pseudoLegalMovesMax, null)) {
+        if (positionMax.makeMove(moveMin, pseudoLegalMovesMax, null)) {
           int max = searchMax(nMoves - 1, positionMax, pseudoLegalMovesMax);
           if (min == 0 || max < min) {
             min = max;
-          }
-          if (min == -1) {
-            break;
+            if (min == -1) {
+              break;
+            }
           }
         }
       }
     }
     if (min == 0) {
-      min = new Position(position).makeMove(new NullMove(), null, null) ? -1 : nMoves;
+      min = new Position(positionMin).makeMove(new NullMove(), null, null) ? -1 : nMoves;
     }
     return min;
   }
 
-  static String toSummary(Operation operation) {
-    return switch (operation) {
+  static String toSummary(Stipulation stipulation) {
+    return switch (stipulation) {
       case Perft(int nPlies) -> "Perft at depth %d".formatted(nPlies);
       case MateSearch(int nMoves) -> "Mate in %d".formatted(nMoves);
     };

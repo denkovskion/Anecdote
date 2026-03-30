@@ -35,8 +35,8 @@ class Anecdote {
 
   static void main(String[] args) {
     configureLogging();
-    boolean version = false;
     boolean help = false;
+    boolean version = false;
     boolean detailed = false;
     boolean verbose = false;
     for (String arg : args) {
@@ -63,25 +63,17 @@ class Anecdote {
       }
     }
     if (help) {
-      IO.println("""
-          Usage:
-            java -jar Anecdote.jar [OPTIONS]
-          
-          Chess mate searcher. Reads problems as EPD records (with one operation:
-            dm for mate search or acd for perft) until EOF, then solves them.
-          
-          Options:
-            -h, --help       Show help and exit
-            -V, --version    Show version and exit
-            -d, --detailed   Enable detailed analysis
-            -v, --verbose    Enable verbose logging""");
+      System.out.printf("Usage:%n" + "  java -jar Anecdote.jar [OPTIONS]%n%n"
+          + "Chess mate searcher. Reads problems as EPD records (with one operation:%n"
+          + "  dm for direct mate or acd for perft) until EOF, then solves them.%n%n" + "Options:%n"
+          + "  -h, --help       Show help and exit%n" + "  -V, --version    Show version and exit%n"
+          + "  -d, --detailed   Enable detailed analysis%n"
+          + "  -v, --verbose    Enable verbose logging%n");
       System.exit(0);
     }
     if (version) {
-      IO.println("""
-          Anecdote %s
-          Copyright (c) 2026 Ivan Denkovski
-          License: MIT""".formatted(getVersion()));
+      System.out.printf("Anecdote %s%n" + "Copyright (c) 2026 Ivan Denkovski%n" + "License: MIT%n",
+          getVersion());
       System.exit(0);
     }
     LOGGER.info("Anecdote %s Copyright (c) 2026 Ivan Denkovski".formatted(getVersion()));

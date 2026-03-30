@@ -109,10 +109,10 @@ class Nodes {
             output.append(" ");
           } else {
             output.append(System.lineSeparator())
-                .append("\t".repeat(switch (positionNext.getSideToMove()) {
+                .repeat("\t", switch (positionNext.getSideToMove()) {
                   case WHITE -> moveNo;
                   case BLACK -> moveNo - 1;
-                }));
+                });
           }
           format(child, positionNext, output, switch (positionNext.getSideToMove()) {
             case WHITE -> moveNo + 1;

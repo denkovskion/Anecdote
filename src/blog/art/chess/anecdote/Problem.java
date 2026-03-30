@@ -43,9 +43,9 @@ class Problem {
 
   void solve(boolean detailed, boolean verbose) {
     IO.println("_".repeat(42));
-    IO.println(Position.toFormatted(position, stipulation));
+    IO.println(Position.toFormatted(position, Stipulations.toSummary(stipulation)));
     IO.println();
-    LOGGER.info("Solving...");
+    LOGGER.info(detailed ? "Solving with analysis..." : "Solving...");
     long begin = System.currentTimeMillis();
     Node solution = Stipulations.solve(stipulation, position, detailed, verbose);
     IO.println(Nodes.toFormatted(solution, position));
