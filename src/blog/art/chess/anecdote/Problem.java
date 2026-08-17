@@ -43,12 +43,12 @@ class Problem {
 
   void solve(boolean detailed, boolean verbose) {
     IO.println("_".repeat(42));
-    IO.println(Position.toFormatted(position, Stipulations.toSummary(stipulation)));
+    IO.println(position.toFormattedString(Stipulations.toSummary(stipulation)));
     IO.println();
     LOGGER.info(detailed ? "Solving with analysis..." : "Solving...");
     long begin = System.currentTimeMillis();
-    Node solution = Stipulations.solve(stipulation, position, detailed, verbose);
-    IO.println(Nodes.toFormatted(solution, position));
+    Node solution = Stipulations.solve(position, stipulation, detailed, verbose);
+    IO.println(Nodes.formatToString(solution, position, 1, false));
     long end = System.currentTimeMillis();
     LOGGER.info("Finished solving in %dms.".formatted(end - begin));
   }

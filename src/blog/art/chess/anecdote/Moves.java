@@ -73,8 +73,4 @@ class Moves {
   record PromotionCapture(Square origin, Square target, Piece promoted) implements Move {
 
   }
-
-  static String toLanCode(Square square) {
-    return "" + (char) ('a' + square.file() - 1) + (char) ('1' + square.rank() - 1);
-  }
 }

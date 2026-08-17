@@ -61,18 +61,12 @@ class Nodes {
 
   }
 
-  static String toFormatted(Node node, Position position) {
+  static String formatToString(Node node, Position position, int moveNo, boolean inline) {
     StringBuilder output = new StringBuilder();
-    format(node, position, output, 1, false);
-    return output.toString();
-  }
-
-  private static void format(Node node, Position position, StringBuilder output, int moveNo,
-      boolean inline) {
     switch (node) {
       case DivideRoot(long count, List<Node> children) -> {
         for (Node child : children) {
-          format(child, position, output, moveNo, false);
+          output.append(formatToString(child, position, moveNo, false));
           output.append(System.lineSeparator());
         }
         output.append(count);
@@ -88,7 +82,7 @@ class Nodes {
           if (!first) {
             output.append(System.lineSeparator());
           }
-          format(child, position, output, moveNo, false);
+          output.append(formatToString(child, position, moveNo, false));
           first = false;
         }
       }
@@ -114,10 +108,10 @@ class Nodes {
                   case BLACK -> moveNo - 1;
                 });
           }
-          format(child, positionNext, output, switch (positionNext.getSideToMove()) {
+          output.append(formatToString(child, positionNext, switch (positionNext.getSideToMove()) {
             case WHITE -> moveNo + 1;
             case BLACK -> moveNo;
-          }, first);
+          }, first));
           first = false;
         }
       }
@@ -127,5 +121,6 @@ class Nodes {
       }
       case IllegalNode() -> output.append("Illegal position");
     }
+    return output.toString();
   }
 }

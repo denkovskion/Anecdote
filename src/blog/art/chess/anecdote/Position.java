@@ -77,179 +77,159 @@ class Position {
   }
 
   boolean isLegal(List<Move> pseudoLegalMoves) {
-    for (Map.Entry<Square, Piece> entry : board.entrySet()) {
-      if (entry.getValue().colour() == sideToMove) {
-        if (!Pieces.generateMoves(entry, board, castlingOrigins, enPassantTarget,
-            pseudoLegalMoves)) {
-          return false;
-        }
-      }
-    }
-    return true;
+    return
+        Pieces.generateMoves(board, sideToMove, castlingOrigins, enPassantTarget, pseudoLegalMoves,
+            false) == 1;
   }
 
   boolean makeMove(Move move, List<Move> pseudoLegalMoves, StringBuilder lanBuilder) {
-    boolean legal = switch (move) {
-      case NullMove() -> {
-        if (lanBuilder != null) {
-          lanBuilder.append((String) null);
-        }
-        enPassantTarget = null;
-        yield true;
+    if (lanBuilder != null) {
+      switch (move) {
+        case NullMove() -> lanBuilder.append((String) null);
+        case QuietMove(Square origin, Square target) ->
+            lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Pieces.toLanCode(origin))
+                .append("-").append(Pieces.toLanCode(target));
+        case Capture(Square origin, Square target) ->
+            lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Pieces.toLanCode(origin))
+                .append("x").append(Pieces.toLanCode(target));
+        case LongCastling(_, _, _, _) -> lanBuilder.append("0-0-0");
+        case ShortCastling(_, _, _, _) -> lanBuilder.append("0-0");
+        case DoubleStep(Square origin, Square target, _) ->
+            lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Pieces.toLanCode(origin))
+                .append("-").append(Pieces.toLanCode(target));
+        case EnPassant(Square origin, Square target, _) ->
+            lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Pieces.toLanCode(origin))
+                .append("x").append(Pieces.toLanCode(target)).append(" e.p.");
+        case Promotion(Square origin, Square target, Piece promoted) ->
+            lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Pieces.toLanCode(origin))
+                .append("-").append(Pieces.toLanCode(target)).append("=")
+                .append(Pieces.toLanCode(promoted));
+        case PromotionCapture(Square origin, Square target, Piece promoted) ->
+            lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Pieces.toLanCode(origin))
+                .append("x").append(Pieces.toLanCode(target)).append("=")
+                .append(Pieces.toLanCode(promoted));
       }
-      case QuietMove(Square origin, Square target) -> {
-        if (lanBuilder != null) {
-          lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Moves.toLanCode(origin))
-              .append("-").append(Moves.toLanCode(target));
+    }
+    boolean preLegal = switch (move) {
+      case NullMove(), QuietMove(_, _), Capture(_, _) -> true;
+      case LongCastling(Square origin, _, _, Square target2) -> {
+        if (new Position(this).makeMove(new NullMove(), null, null)) {
+          if (new Position(this).makeMove(new QuietMove(origin, target2), null, null)) {
+            yield true;
+          }
         }
+        yield false;
+      }
+      case ShortCastling(Square origin, _, _, Square target2) -> {
+        if (new Position(this).makeMove(new NullMove(), null, null)) {
+          if (new Position(this).makeMove(new QuietMove(origin, target2), null, null)) {
+            yield true;
+          }
+        }
+        yield false;
+      }
+      case DoubleStep(_, _, _), EnPassant(_, _, _), Promotion(_, _, _), PromotionCapture(_, _, _) ->
+          true;
+    };
+    doMakeMove(move);
+    if (preLegal) {
+      if (isLegal(pseudoLegalMoves)) {
+        if (lanBuilder != null) {
+          List<Move> pseudoLegalMovesNext = pseudoLegalMoves;
+          if (pseudoLegalMovesNext == null) {
+            pseudoLegalMovesNext = new ArrayList<>();
+            Pieces.generateMoves(board, sideToMove, castlingOrigins, enPassantTarget,
+                pseudoLegalMovesNext, true);
+          }
+          boolean terminal = true;
+          for (Move moveNext : pseudoLegalMovesNext) {
+            if (new Position(this).makeMove(moveNext, null, null)) {
+              terminal = false;
+              break;
+            }
+          }
+          Position opposite = new Position(this);
+          opposite.doMakeMove(new NullMove());
+          int legal = Pieces.generateMoves(opposite.board, opposite.sideToMove,
+              opposite.castlingOrigins, opposite.enPassantTarget, null, true);
+          if (terminal) {
+            if (legal == 1) {
+              lanBuilder.append("=");
+            } else {
+              if (legal < -1) {
+                lanBuilder.repeat("+", -legal);
+              }
+              lanBuilder.append("#");
+            }
+          } else {
+            if (legal < 0) {
+              lanBuilder.repeat("+", -legal);
+            }
+          }
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private void doMakeMove(Move move) {
+    switch (move) {
+      case NullMove() -> enPassantTarget = null;
+      case QuietMove(Square origin, Square target) -> {
         board.put(target, board.remove(origin));
         castlingOrigins.remove(origin);
         enPassantTarget = null;
-        yield true;
       }
       case Capture(Square origin, Square target) -> {
-        if (lanBuilder != null) {
-          lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Moves.toLanCode(origin))
-              .append("x").append(Moves.toLanCode(target));
-        }
         board.replace(target, board.remove(origin));
         castlingOrigins.remove(origin);
         castlingOrigins.remove(target);
         enPassantTarget = null;
-        yield true;
       }
       case LongCastling(Square origin, Square target, Square origin2, Square target2) -> {
-        if (lanBuilder != null) {
-          lanBuilder.append("0-0-0");
-        }
-        boolean preLegal = new Position(this).makeMove(new NullMove(), null, null);
-        if (preLegal) {
-          preLegal = new Position(this).makeMove(new QuietMove(origin, target2), null, null);
-        }
         board.put(target, board.remove(origin));
         board.put(target2, board.remove(origin2));
         castlingOrigins.remove(origin);
         castlingOrigins.remove(origin2);
         enPassantTarget = null;
-        yield preLegal;
       }
       case ShortCastling(Square origin, Square target, Square origin2, Square target2) -> {
-        if (lanBuilder != null) {
-          lanBuilder.append("0-0");
-        }
-        boolean preLegal = new Position(this).makeMove(new NullMove(), null, null);
-        if (preLegal) {
-          preLegal = new Position(this).makeMove(new QuietMove(origin, target2), null, null);
-        }
         board.put(target, board.remove(origin));
         board.put(target2, board.remove(origin2));
         castlingOrigins.remove(origin);
         castlingOrigins.remove(origin2);
         enPassantTarget = null;
-        yield preLegal;
       }
       case DoubleStep(Square origin, Square target, Square stop) -> {
-        if (lanBuilder != null) {
-          lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Moves.toLanCode(origin))
-              .append("-").append(Moves.toLanCode(target));
-        }
         board.put(target, board.remove(origin));
         enPassantTarget = stop;
-        yield true;
       }
       case EnPassant(Square origin, Square target, Square stop) -> {
-        if (lanBuilder != null) {
-          lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Moves.toLanCode(origin))
-              .append("x").append(Moves.toLanCode(target)).append(" e.p.");
-        }
         board.remove(stop);
         board.put(target, board.remove(origin));
         enPassantTarget = null;
-        yield true;
       }
       case Promotion(Square origin, Square target, Piece promoted) -> {
-        if (lanBuilder != null) {
-          lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Moves.toLanCode(origin))
-              .append("-").append(Moves.toLanCode(target)).append("=")
-              .append(Pieces.toLanCode(promoted));
-        }
         board.remove(origin);
         board.put(target, promoted);
         enPassantTarget = null;
-        yield true;
       }
       case PromotionCapture(Square origin, Square target, Piece promoted) -> {
-        if (lanBuilder != null) {
-          lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Moves.toLanCode(origin))
-              .append("x").append(Moves.toLanCode(target)).append("=")
-              .append(Pieces.toLanCode(promoted));
-        }
         board.remove(origin);
         board.replace(target, promoted);
         castlingOrigins.remove(target);
         enPassantTarget = null;
-        yield true;
       }
-    };
+    }
     sideToMove = switch (sideToMove) {
       case WHITE -> Colour.BLACK;
       case BLACK -> Colour.WHITE;
     };
-    if (legal) {
-      legal = isLegal(pseudoLegalMoves);
-    }
-    if (lanBuilder != null) {
-      if (legal) {
-        List<Move> pseudoLegalMovesNext = pseudoLegalMoves;
-        if (pseudoLegalMovesNext == null) {
-          pseudoLegalMovesNext = new ArrayList<>();
-          for (Map.Entry<Square, Piece> entry : board.entrySet()) {
-            if (entry.getValue().colour() == sideToMove) {
-              Pieces.generateMoves(entry, board, castlingOrigins, enPassantTarget,
-                  pseudoLegalMovesNext);
-            }
-          }
-        }
-        boolean terminal = true;
-        for (Move moveNext : pseudoLegalMovesNext) {
-          if (new Position(this).makeMove(moveNext, null, null)) {
-            terminal = false;
-            break;
-          }
-        }
-        int nChecks = 0;
-        Position opposite = new Position(this);
-        opposite.makeMove(new NullMove(), null, null);
-        for (Map.Entry<Square, Piece> entry : opposite.board.entrySet()) {
-          if (entry.getValue().colour() == opposite.sideToMove) {
-            if (!Pieces.generateMoves(entry, opposite.board, opposite.castlingOrigins,
-                opposite.enPassantTarget, null)) {
-              nChecks++;
-            }
-          }
-        }
-        if (terminal) {
-          if (nChecks > 0) {
-            if (nChecks > 1) {
-              lanBuilder.repeat("+", nChecks);
-            }
-            lanBuilder.append("#");
-          } else {
-            lanBuilder.append("=");
-          }
-        } else {
-          if (nChecks > 0) {
-            lanBuilder.repeat("+", nChecks);
-          }
-        }
-      }
-    }
-    return legal;
   }
 
-  static String toFormatted(Position position, String operation) {
-    return Pieces.toFormatted(position.board, position.sideToMove, position.castlingOrigins,
-        position.enPassantTarget, operation);
+  String toFormattedString(String operation) {
+    return Pieces.formatToString(board, sideToMove, castlingOrigins, enPassantTarget, operation);
   }
 
   @Override
