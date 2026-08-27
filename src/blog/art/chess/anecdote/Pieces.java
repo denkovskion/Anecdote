@@ -106,10 +106,11 @@ class Pieces {
   static int generateMoves(Map<Square, Piece> board, Colour sideToMove, Set<Square> castlingOrigins,
       Square enPassantTarget, List<Move> moves, boolean count) {
     int nChecks = 0;
-    for (Map.Entry<Square, Piece> entry : board.entrySet()) {
-      Piece piece = entry.getValue();
+    List<Square> origins = new ArrayList<>(board.keySet());
+    origins.sort(Comparator.comparingInt(Square::file).thenComparingInt(Square::rank));
+    for (Square origin : origins) {
+      Piece piece = board.get(origin);
       if (piece.colour() == sideToMove) {
-        Square origin = entry.getKey();
         switch (piece) {
           case Leaper leaper -> {
             List<Direction> directions = DIRECTIONS.computeIfAbsent(switch (leaper) {

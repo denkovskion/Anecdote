@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.1] - 2026-08-27
+
+- Board representation now uses an unordered map
+
 ## [1.3.0] - 2026-08-17
 
 ### Changed

@@ -38,18 +38,16 @@ import blog.art.chess.anecdote.Moves.Square;
 import blog.art.chess.anecdote.Pieces.Colour;
 import blog.art.chess.anecdote.Pieces.Piece;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.StringJoiner;
-import java.util.TreeMap;
 
 class Position {
 
-  private final SortedMap<Square, Piece> board;
+  private final Map<Square, Piece> board;
   private Colour sideToMove;
   private final Set<Square> castlingOrigins;
   private Square enPassantTarget;
@@ -57,16 +55,14 @@ class Position {
   Position(Map<Square, Piece> board, Colour sideToMove, Set<Square> castlingOrigins,
       Square enPassantTarget) {
     Pieces.validate(board, sideToMove, castlingOrigins, enPassantTarget);
-    this.board = new TreeMap<>(
-        Comparator.comparingInt(Square::file).thenComparingInt(Square::rank));
-    this.board.putAll(board);
+    this.board = new HashMap<>(board);
     this.sideToMove = sideToMove;
     this.castlingOrigins = new HashSet<>(castlingOrigins);
     this.enPassantTarget = enPassantTarget;
   }
 
   Position(Position other) {
-    this.board = new TreeMap<>(other.board);
+    this.board = new HashMap<>(other.board);
     this.sideToMove = other.sideToMove;
     this.castlingOrigins = new HashSet<>(other.castlingOrigins);
     this.enPassantTarget = other.enPassantTarget;
@@ -131,7 +127,7 @@ class Position {
       case DoubleStep(_, _, _), EnPassant(_, _, _), Promotion(_, _, _), PromotionCapture(_, _, _) ->
           true;
     };
-    doMakeMove(move);
+    makeMove(move);
     if (preLegal) {
       if (isLegal(pseudoLegalMoves)) {
         if (lanBuilder != null) {
@@ -149,7 +145,7 @@ class Position {
             }
           }
           Position opposite = new Position(this);
-          opposite.doMakeMove(new NullMove());
+          opposite.makeMove(new NullMove());
           int legal = Pieces.generateMoves(opposite.board, opposite.sideToMove,
               opposite.castlingOrigins, opposite.enPassantTarget, null, true);
           if (terminal) {
@@ -173,7 +169,7 @@ class Position {
     return false;
   }
 
-  private void doMakeMove(Move move) {
+  private void makeMove(Move move) {
     switch (move) {
       case NullMove() -> enPassantTarget = null;
       case QuietMove(Square origin, Square target) -> {
