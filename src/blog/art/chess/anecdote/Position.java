@@ -80,31 +80,29 @@ class Position {
 
   boolean makeMove(Move move, List<Move> pseudoLegalMoves, StringBuilder lanBuilder) {
     if (lanBuilder != null) {
-      switch (move) {
-        case NullMove() -> lanBuilder.append((String) null);
+      lanBuilder.append(switch (move) {
+        case NullMove() -> (String) null;
         case QuietMove(Square origin, Square target) ->
-            lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Pieces.toLanCode(origin))
-                .append("-").append(Pieces.toLanCode(target));
+            "%s%s-%s".formatted(Pieces.toLanCode(board.get(origin)), Pieces.toLanCode(origin),
+                Pieces.toLanCode(target));
         case Capture(Square origin, Square target) ->
-            lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Pieces.toLanCode(origin))
-                .append("x").append(Pieces.toLanCode(target));
-        case LongCastling(_, _, _, _) -> lanBuilder.append("0-0-0");
-        case ShortCastling(_, _, _, _) -> lanBuilder.append("0-0");
+            "%s%sx%s".formatted(Pieces.toLanCode(board.get(origin)), Pieces.toLanCode(origin),
+                Pieces.toLanCode(target));
+        case LongCastling(_, _, _, _) -> "0-0-0";
+        case ShortCastling(_, _, _, _) -> "0-0";
         case DoubleStep(Square origin, Square target, _) ->
-            lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Pieces.toLanCode(origin))
-                .append("-").append(Pieces.toLanCode(target));
+            "%s%s-%s".formatted(Pieces.toLanCode(board.get(origin)), Pieces.toLanCode(origin),
+                Pieces.toLanCode(target));
         case EnPassant(Square origin, Square target, _) ->
-            lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Pieces.toLanCode(origin))
-                .append("x").append(Pieces.toLanCode(target)).append(" e.p.");
+            "%s%sx%s e.p.".formatted(Pieces.toLanCode(board.get(origin)), Pieces.toLanCode(origin),
+                Pieces.toLanCode(target));
         case Promotion(Square origin, Square target, Piece promoted) ->
-            lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Pieces.toLanCode(origin))
-                .append("-").append(Pieces.toLanCode(target)).append("=")
-                .append(Pieces.toLanCode(promoted));
+            "%s%s-%s=%s".formatted(Pieces.toLanCode(board.get(origin)), Pieces.toLanCode(origin),
+                Pieces.toLanCode(target), Pieces.toLanCode(promoted));
         case PromotionCapture(Square origin, Square target, Piece promoted) ->
-            lanBuilder.append(Pieces.toLanCode(board.get(origin))).append(Pieces.toLanCode(origin))
-                .append("x").append(Pieces.toLanCode(target)).append("=")
-                .append(Pieces.toLanCode(promoted));
-      }
+            "%s%sx%s=%s".formatted(Pieces.toLanCode(board.get(origin)), Pieces.toLanCode(origin),
+                Pieces.toLanCode(target), Pieces.toLanCode(promoted));
+      });
     }
     boolean preLegal = switch (move) {
       case NullMove(), QuietMove(_, _), Capture(_, _) -> true;
