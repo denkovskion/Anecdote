@@ -24,7 +24,6 @@
 
 package blog.art.chess.anecdote;
 
-import blog.art.chess.anecdote.Moves.Square;
 import blog.art.chess.anecdote.Pieces.Bishop;
 import blog.art.chess.anecdote.Pieces.Colour;
 import blog.art.chess.anecdote.Pieces.King;
@@ -33,6 +32,7 @@ import blog.art.chess.anecdote.Pieces.Pawn;
 import blog.art.chess.anecdote.Pieces.Piece;
 import blog.art.chess.anecdote.Pieces.Queen;
 import blog.art.chess.anecdote.Pieces.Rook;
+import blog.art.chess.anecdote.Pieces.Square;
 import blog.art.chess.anecdote.Stipulations.MateSearch;
 import blog.art.chess.anecdote.Stipulations.Perft;
 import java.util.ArrayList;

@@ -25,12 +25,9 @@
 package blog.art.chess.anecdote;
 
 import blog.art.chess.anecdote.Pieces.Piece;
+import blog.art.chess.anecdote.Pieces.Square;
 
 class Moves {
-
-  record Square(int file, int rank) {
-
-  }
 
   sealed interface Move {
 

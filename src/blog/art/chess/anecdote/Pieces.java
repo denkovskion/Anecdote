@@ -33,7 +33,6 @@ import blog.art.chess.anecdote.Moves.Promotion;
 import blog.art.chess.anecdote.Moves.PromotionCapture;
 import blog.art.chess.anecdote.Moves.QuietMove;
 import blog.art.chess.anecdote.Moves.ShortCastling;
-import blog.art.chess.anecdote.Moves.Square;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -83,6 +82,10 @@ class Pieces {
 
   }
 
+  record Square(int file, int rank) {
+
+  }
+
   private record Direction(int fileOffset, int rankOffset) {
 
   }
@@ -104,7 +107,7 @@ class Pieces {
   }
 
   static int generateMoves(Map<Square, Piece> board, Colour sideToMove, Set<Square> castlingOrigins,
-      Square enPassantTarget, List<Move> moves, boolean count) {
+      Square enPassantTarget, List<Move> moves, boolean countChecks) {
     int nChecks = 0;
     List<Square> origins = new ArrayList<>(board.keySet());
     origins.sort(Comparator.comparingInt(Square::file).thenComparingInt(Square::rank));
@@ -126,7 +129,7 @@ class Pieces {
                 if (captured != null) {
                   if (captured.colour() != leaper.colour()) {
                     if (captured instanceof King) {
-                      if (count) {
+                      if (countChecks) {
                         nChecks++;
                       } else {
                         return 0;
@@ -208,7 +211,7 @@ class Pieces {
                   if (captured != null) {
                     if (captured.colour() != rider.colour()) {
                       if (captured instanceof King) {
-                        if (count) {
+                        if (countChecks) {
                           nChecks++;
                         } else {
                           return 0;
@@ -247,7 +250,7 @@ class Pieces {
                 if (captured != null) {
                   if (captured.colour() != pawn.colour()) {
                     if (captured instanceof King) {
-                      if (count) {
+                      if (countChecks) {
                         nChecks++;
                       } else {
                         return 0;
@@ -340,7 +343,8 @@ class Pieces {
   }
 
   static String toLanCode(Square square) {
-    return "" + (char) ('a' + square.file() - 1) + (char) ('1' + square.rank() - 1);
+    return String.valueOf(
+        new char[]{(char) ('a' + square.file() - 1), (char) ('1' + square.rank() - 1)});
   }
 
   static void validate(Map<Square, Piece> board, Colour sideToMove, Set<Square> castlingOrigins,
@@ -437,8 +441,8 @@ class Pieces {
         }
         case 6 -> {
           if (enPassantTarget != null) {
-            args.add("" + (char) ('a' + enPassantTarget.file() - 1) + (char) (
-                '1' + enPassantTarget.rank() - 1));
+            args.add(String.valueOf(new char[]{(char) ('a' + enPassantTarget.file() - 1),
+                (char) ('1' + enPassantTarget.rank() - 1)}));
           } else {
             args.add("-");
           }
