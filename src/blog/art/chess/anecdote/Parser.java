@@ -54,36 +54,35 @@ class Parser {
     List<Problem> problems = new ArrayList<>();
     for (String line; (line = IO.readln()) != null; ) {
       if (!line.isBlank()) {
-        try (Scanner fields = new Scanner(line)) {
+        try {
+          Scanner fields = new Scanner(line);
           Map<Square, Piece> board = new HashMap<>();
-          try (Scanner characters = new Scanner(fields.next())) {
-            characters.useDelimiter("");
-            for (int rank = 8; rank >= 1; rank--) {
-              for (int file = 1; file <= 8; file++) {
-                if (characters.hasNext("[" + "12345678".substring(0, 8 - (file - 1)) + "]")) {
-                  file += characters.nextInt();
-                  if (file > 8) {
-                    break;
-                  }
-                }
-                String letter = characters.next("[KQRBNPkqrbnp]");
-                switch (letter) {
-                  case "K" -> board.put(new Square(file, rank), new King(Colour.WHITE));
-                  case "Q" -> board.put(new Square(file, rank), new Queen(Colour.WHITE));
-                  case "R" -> board.put(new Square(file, rank), new Rook(Colour.WHITE));
-                  case "B" -> board.put(new Square(file, rank), new Bishop(Colour.WHITE));
-                  case "N" -> board.put(new Square(file, rank), new Knight(Colour.WHITE));
-                  case "P" -> board.put(new Square(file, rank), new Pawn(Colour.WHITE));
-                  case "k" -> board.put(new Square(file, rank), new King(Colour.BLACK));
-                  case "q" -> board.put(new Square(file, rank), new Queen(Colour.BLACK));
-                  case "r" -> board.put(new Square(file, rank), new Rook(Colour.BLACK));
-                  case "b" -> board.put(new Square(file, rank), new Bishop(Colour.BLACK));
-                  case "n" -> board.put(new Square(file, rank), new Knight(Colour.BLACK));
-                  case "p" -> board.put(new Square(file, rank), new Pawn(Colour.BLACK));
+          Scanner characters = new Scanner(fields.next()).useDelimiter("");
+          for (int rank = 8; rank >= 1; rank--) {
+            for (int file = 1; file <= 8; file++) {
+              if (characters.hasNext("[" + "12345678".substring(0, 8 - (file - 1)) + "]")) {
+                file += characters.nextInt();
+                if (file > 8) {
+                  break;
                 }
               }
-              characters.skip(rank > 1 ? "/" : "$");
+              String letter = characters.next("[KQRBNPkqrbnp]");
+              switch (letter) {
+                case "K" -> board.put(new Square(file, rank), new King(Colour.WHITE));
+                case "Q" -> board.put(new Square(file, rank), new Queen(Colour.WHITE));
+                case "R" -> board.put(new Square(file, rank), new Rook(Colour.WHITE));
+                case "B" -> board.put(new Square(file, rank), new Bishop(Colour.WHITE));
+                case "N" -> board.put(new Square(file, rank), new Knight(Colour.WHITE));
+                case "P" -> board.put(new Square(file, rank), new Pawn(Colour.WHITE));
+                case "k" -> board.put(new Square(file, rank), new King(Colour.BLACK));
+                case "q" -> board.put(new Square(file, rank), new Queen(Colour.BLACK));
+                case "r" -> board.put(new Square(file, rank), new Rook(Colour.BLACK));
+                case "b" -> board.put(new Square(file, rank), new Bishop(Colour.BLACK));
+                case "n" -> board.put(new Square(file, rank), new Knight(Colour.BLACK));
+                case "p" -> board.put(new Square(file, rank), new Pawn(Colour.BLACK));
+              }
             }
+            characters.skip(rank > 1 ? "/" : "$");
           }
           Colour sideToMove = null;
           switch (fields.next("[wb]")) {
