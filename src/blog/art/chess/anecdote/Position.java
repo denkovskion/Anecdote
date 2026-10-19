@@ -38,9 +38,9 @@ import blog.art.chess.anecdote.Pieces.Colour;
 import blog.art.chess.anecdote.Pieces.Piece;
 import blog.art.chess.anecdote.Pieces.Square;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -72,13 +72,13 @@ class Position {
     return sideToMove;
   }
 
-  boolean isLegal(List<Move> pseudoLegalMoves) {
+  boolean isLegal(Collection<Move> pseudoLegalMoves) {
     return
         Pieces.generateMoves(board, sideToMove, castlingOrigins, enPassantTarget, pseudoLegalMoves,
             false) == 1;
   }
 
-  boolean makeMove(Move move, List<Move> pseudoLegalMoves, StringBuilder lanBuilder) {
+  boolean makeMove(Move move, Collection<Move> pseudoLegalMoves, StringBuilder lanBuilder) {
     if (lanBuilder != null) {
       lanBuilder.append(switch (move) {
         case NullMove() -> (String) null;
@@ -129,7 +129,7 @@ class Position {
     if (preLegal) {
       if (isLegal(pseudoLegalMoves)) {
         if (lanBuilder != null) {
-          List<Move> pseudoLegalMovesNext = pseudoLegalMoves;
+          Collection<Move> pseudoLegalMovesNext = pseudoLegalMoves;
           if (pseudoLegalMovesNext == null) {
             pseudoLegalMovesNext = new ArrayList<>();
             Pieces.generateMoves(board, sideToMove, castlingOrigins, enPassantTarget,

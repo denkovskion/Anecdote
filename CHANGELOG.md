@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.4.0] - 2026-10-19
+
+- One-run search lists are now queues
+
 ## [1.3.4] - 2026-10-07
 
 - Maintenance release

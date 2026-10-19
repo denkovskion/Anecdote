@@ -34,9 +34,11 @@ import blog.art.chess.anecdote.Nodes.MateLeaf;
 import blog.art.chess.anecdote.Nodes.MateRoot;
 import blog.art.chess.anecdote.Nodes.Node;
 import blog.art.chess.anecdote.Nodes.PerftNode;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Queue;
 import java.util.logging.Logger;
 
 class Stipulations {
@@ -56,7 +58,7 @@ class Stipulations {
   }
 
   static Node solve(Position position, Stipulation stipulation, boolean detailed, boolean verbose) {
-    List<Move> pseudoLegalMoves = new ArrayList<>();
+    Queue<Move> pseudoLegalMoves = new ArrayDeque<>();
     if (position.isLegal(pseudoLegalMoves)) {
       switch (stipulation) {
         case Perft(int nPlies) -> {
@@ -74,15 +76,16 @@ class Stipulations {
     }
   }
 
-  private static long count(Position position, int nPlies, List<Move> pseudoLegalMoves,
+  private static long count(Position position, int nPlies, Queue<Move> pseudoLegalMoves,
       List<Node> nodes, boolean verbose) {
     if (nPlies == 0) {
       return 1;
     }
     long nNodes = 0;
-    for (Move move : pseudoLegalMoves) {
+    while (!pseudoLegalMoves.isEmpty()) {
+      Move move = pseudoLegalMoves.remove();
       Position positionNext = new Position(position);
-      List<Move> pseudoLegalMovesNext = new ArrayList<>();
+      Queue<Move> pseudoLegalMovesNext = new ArrayDeque<>();
       StringBuilder lanBuilder = verbose ? new StringBuilder() : null;
       if (positionNext.makeMove(move, pseudoLegalMovesNext, lanBuilder)) {
         long nChildNodes = count(positionNext, nPlies - 1, pseudoLegalMovesNext, null, false);
@@ -103,13 +106,14 @@ class Stipulations {
     return nNodes;
   }
 
-  private static List<Node> analyse(Position position, int nMoves, List<Move> pseudoLegalMoves,
+  private static List<Node> analyse(Position position, int nMoves, Queue<Move> pseudoLegalMoves,
       boolean detailed, boolean verbose) {
     List<Node> nodes = new ArrayList<>();
     if (detailed) {
-      for (Move moveMax : pseudoLegalMoves) {
+      while (!pseudoLegalMoves.isEmpty()) {
+        Move moveMax = pseudoLegalMoves.remove();
         Position positionMin = new Position(position);
-        List<Move> pseudoLegalMovesMin = new ArrayList<>();
+        Queue<Move> pseudoLegalMovesMin = new ArrayDeque<>();
         StringBuilder lanBuilder = verbose ? new StringBuilder() : null;
         if (positionMin.makeMove(moveMax, pseudoLegalMovesMin, lanBuilder)) {
           int min = searchMin(positionMin, nMoves, pseudoLegalMovesMin, true);
@@ -119,9 +123,10 @@ class Stipulations {
               LOGGER.fine("Tried '%s'. Found mate in %d.".formatted(lanBuilder, distanceMax));
             }
             List<Node> nodesMin = new ArrayList<>();
-            for (Move moveMin : pseudoLegalMovesMin) {
+            while (!pseudoLegalMovesMin.isEmpty()) {
+              Move moveMin = pseudoLegalMovesMin.remove();
               Position positionMax = new Position(positionMin);
-              List<Move> pseudoLegalMovesMax = new ArrayList<>();
+              Queue<Move> pseudoLegalMovesMax = new ArrayDeque<>();
               if (positionMax.makeMove(moveMin, pseudoLegalMovesMax, null)) {
                 int max = searchMax(positionMax, distanceMax - 1, pseudoLegalMovesMax, true);
                 int distanceMin = distanceMax - max;
@@ -145,17 +150,19 @@ class Stipulations {
       }
       nodes.sort(Comparator.comparingInt(node -> ((MateBranch) node).distance()));
     } else {
-      for (Move moveMax : pseudoLegalMoves) {
+      while (!pseudoLegalMoves.isEmpty()) {
+        Move moveMax = pseudoLegalMoves.remove();
         Position positionMin = new Position(position);
         List<Move> pseudoLegalMovesMin = new ArrayList<>();
         StringBuilder lanBuilder = verbose ? new StringBuilder() : null;
         if (positionMin.makeMove(moveMax, pseudoLegalMovesMin, lanBuilder)) {
           int depth = 1;
-          for (; depth <= nMoves; depth++) {
+          while (depth <= nMoves) {
             if (searchMin(positionMin, depth, pseudoLegalMovesMin, false) == 1) {
               nodes.add(new MateLeaf(moveMax, depth));
               break;
             }
+            depth++;
           }
           if (verbose) {
             LOGGER.fine(
@@ -169,7 +176,7 @@ class Stipulations {
     return nodes;
   }
 
-  private static int searchMax(Position positionMax, int nMoves, List<Move> pseudoLegalMovesMax,
+  private static int searchMax(Position positionMax, int nMoves, Iterable<Move> pseudoLegalMovesMax,
       boolean detailed) {
     int max = -1;
     for (Move moveMax : pseudoLegalMovesMax) {
@@ -188,7 +195,7 @@ class Stipulations {
     return max;
   }
 
-  private static int searchMin(Position positionMin, int nMoves, List<Move> pseudoLegalMovesMin,
+  private static int searchMin(Position positionMin, int nMoves, Iterable<Move> pseudoLegalMovesMin,
       boolean detailed) {
     int min = 0;
     if (nMoves == 1) {

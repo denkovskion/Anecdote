@@ -34,6 +34,7 @@ import blog.art.chess.anecdote.Moves.PromotionCapture;
 import blog.art.chess.anecdote.Moves.QuietMove;
 import blog.art.chess.anecdote.Moves.ShortCastling;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -107,7 +108,7 @@ class Pieces {
   }
 
   static int generateMoves(Map<Square, Piece> board, Colour sideToMove, Set<Square> castlingOrigins,
-      Square enPassantTarget, List<Move> moves, boolean countChecks) {
+      Square enPassantTarget, Collection<Move> moves, boolean countChecks) {
     int nChecks = 0;
     List<Square> origins = new ArrayList<>(board.keySet());
     origins.sort(Comparator.comparingInt(Square::file).thenComparingInt(Square::rank));
