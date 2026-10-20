@@ -24,16 +24,8 @@
 
 package blog.art.chess.anecdote;
 
-import blog.art.chess.anecdote.Moves.Capture;
-import blog.art.chess.anecdote.Moves.DoubleStep;
-import blog.art.chess.anecdote.Moves.EnPassant;
-import blog.art.chess.anecdote.Moves.LongCastling;
 import blog.art.chess.anecdote.Moves.Move;
 import blog.art.chess.anecdote.Moves.NullMove;
-import blog.art.chess.anecdote.Moves.Promotion;
-import blog.art.chess.anecdote.Moves.PromotionCapture;
-import blog.art.chess.anecdote.Moves.QuietMove;
-import blog.art.chess.anecdote.Moves.ShortCastling;
 import blog.art.chess.anecdote.Pieces.Colour;
 import blog.art.chess.anecdote.Pieces.Piece;
 import blog.art.chess.anecdote.Pieces.Square;
@@ -80,86 +72,20 @@ class Position {
 
   boolean makeMove(Move move, Collection<Move> pseudoLegalMoves, StringBuilder lanBuilder) {
     if (lanBuilder != null) {
-      lanBuilder.append(switch (move) {
-        case NullMove() -> (String) null;
-        case QuietMove(Square origin, Square target) ->
-            "%s%s-%s".formatted(Pieces.toLanCode(board.get(origin)), Pieces.toLanCode(origin),
-                Pieces.toLanCode(target));
-        case Capture(Square origin, Square target) ->
-            "%s%sx%s".formatted(Pieces.toLanCode(board.get(origin)), Pieces.toLanCode(origin),
-                Pieces.toLanCode(target));
-        case LongCastling(_, _, _, _) -> "0-0-0";
-        case ShortCastling(_, _, _, _) -> "0-0";
-        case DoubleStep(Square origin, Square target, _) ->
-            "%s%s-%s".formatted(Pieces.toLanCode(board.get(origin)), Pieces.toLanCode(origin),
-                Pieces.toLanCode(target));
-        case EnPassant(Square origin, Square target, _) ->
-            "%s%sx%s e.p.".formatted(Pieces.toLanCode(board.get(origin)), Pieces.toLanCode(origin),
-                Pieces.toLanCode(target));
-        case Promotion(Square origin, Square target, Piece promoted) ->
-            "%s%s-%s=%s".formatted(Pieces.toLanCode(board.get(origin)), Pieces.toLanCode(origin),
-                Pieces.toLanCode(target), Pieces.toLanCode(promoted));
-        case PromotionCapture(Square origin, Square target, Piece promoted) ->
-            "%s%sx%s=%s".formatted(Pieces.toLanCode(board.get(origin)), Pieces.toLanCode(origin),
-                Pieces.toLanCode(target), Pieces.toLanCode(promoted));
-      });
+      Moves.preWrite(move, board, lanBuilder);
     }
-    boolean preLegal = switch (move) {
-      case NullMove(), QuietMove(_, _), Capture(_, _) -> true;
-      case LongCastling(Square origin, _, _, Square target2) -> {
-        if (new Position(this).makeMove(new NullMove(), null, null)) {
-          if (new Position(this).makeMove(new QuietMove(origin, target2), null, null)) {
-            yield true;
-          }
-        }
-        yield false;
-      }
-      case ShortCastling(Square origin, _, _, Square target2) -> {
-        if (new Position(this).makeMove(new NullMove(), null, null)) {
-          if (new Position(this).makeMove(new QuietMove(origin, target2), null, null)) {
-            yield true;
-          }
-        }
-        yield false;
-      }
-      case DoubleStep(_, _, _), EnPassant(_, _, _), Promotion(_, _, _), PromotionCapture(_, _, _) ->
-          true;
+    boolean preLegal = Moves.preMake(move, this);
+    Moves.updateBoard(move, board);
+    Moves.updateCastlingOrigins(move, castlingOrigins);
+    enPassantTarget = Moves.getEnPassantTarget(move);
+    sideToMove = switch (sideToMove) {
+      case WHITE -> Colour.BLACK;
+      case BLACK -> Colour.WHITE;
     };
-    makeMove(move);
     if (preLegal) {
       if (isLegal(pseudoLegalMoves)) {
         if (lanBuilder != null) {
-          Collection<Move> pseudoLegalMovesNext = pseudoLegalMoves;
-          if (pseudoLegalMovesNext == null) {
-            pseudoLegalMovesNext = new ArrayList<>();
-            Pieces.generateMoves(board, sideToMove, castlingOrigins, enPassantTarget,
-                pseudoLegalMovesNext, true);
-          }
-          boolean terminal = true;
-          for (Move moveNext : pseudoLegalMovesNext) {
-            if (new Position(this).makeMove(moveNext, null, null)) {
-              terminal = false;
-              break;
-            }
-          }
-          Position opposite = new Position(this);
-          opposite.makeMove(new NullMove());
-          int legal = Pieces.generateMoves(opposite.board, opposite.sideToMove,
-              opposite.castlingOrigins, opposite.enPassantTarget, null, true);
-          if (terminal) {
-            if (legal == 1) {
-              lanBuilder.append("=");
-            } else {
-              if (legal < -1) {
-                lanBuilder.repeat("+", -legal);
-              }
-              lanBuilder.append("#");
-            }
-          } else {
-            if (legal < 0) {
-              lanBuilder.repeat("+", -legal);
-            }
-          }
+          postWrite(pseudoLegalMoves, lanBuilder);
         }
         return true;
       }
@@ -167,59 +93,45 @@ class Position {
     return false;
   }
 
-  private void makeMove(Move move) {
-    switch (move) {
-      case NullMove() -> enPassantTarget = null;
-      case QuietMove(Square origin, Square target) -> {
-        board.put(target, board.remove(origin));
-        castlingOrigins.remove(origin);
-        enPassantTarget = null;
-      }
-      case Capture(Square origin, Square target) -> {
-        board.replace(target, board.remove(origin));
-        castlingOrigins.remove(origin);
-        castlingOrigins.remove(target);
-        enPassantTarget = null;
-      }
-      case LongCastling(Square origin, Square target, Square origin2, Square target2) -> {
-        board.put(target, board.remove(origin));
-        board.put(target2, board.remove(origin2));
-        castlingOrigins.remove(origin);
-        castlingOrigins.remove(origin2);
-        enPassantTarget = null;
-      }
-      case ShortCastling(Square origin, Square target, Square origin2, Square target2) -> {
-        board.put(target, board.remove(origin));
-        board.put(target2, board.remove(origin2));
-        castlingOrigins.remove(origin);
-        castlingOrigins.remove(origin2);
-        enPassantTarget = null;
-      }
-      case DoubleStep(Square origin, Square target, Square stop) -> {
-        board.put(target, board.remove(origin));
-        enPassantTarget = stop;
-      }
-      case EnPassant(Square origin, Square target, Square stop) -> {
-        board.remove(stop);
-        board.put(target, board.remove(origin));
-        enPassantTarget = null;
-      }
-      case Promotion(Square origin, Square target, Piece promoted) -> {
-        board.remove(origin);
-        board.put(target, promoted);
-        enPassantTarget = null;
-      }
-      case PromotionCapture(Square origin, Square target, Piece promoted) -> {
-        board.remove(origin);
-        board.replace(target, promoted);
-        castlingOrigins.remove(target);
-        enPassantTarget = null;
+  private void postWrite(Collection<Move> pseudoLegalMoves, StringBuilder lanBuilder) {
+    Collection<Move> pseudoLegalMovesNext = pseudoLegalMoves;
+    if (pseudoLegalMovesNext == null) {
+      pseudoLegalMovesNext = new ArrayList<>();
+      Pieces.generateMoves(board, sideToMove, castlingOrigins, enPassantTarget,
+          pseudoLegalMovesNext, true);
+    }
+    boolean terminal = true;
+    for (Move moveNext : pseudoLegalMovesNext) {
+      if (new Position(this).makeMove(moveNext, null, null)) {
+        terminal = false;
+        break;
       }
     }
-    sideToMove = switch (sideToMove) {
+    Position opposite = new Position(this);
+    NullMove nullMove = new NullMove();
+    Moves.updateBoard(nullMove, opposite.board);
+    Moves.updateCastlingOrigins(nullMove, opposite.castlingOrigins);
+    opposite.enPassantTarget = Moves.getEnPassantTarget(nullMove);
+    opposite.sideToMove = switch (opposite.sideToMove) {
       case WHITE -> Colour.BLACK;
       case BLACK -> Colour.WHITE;
     };
+    int legal = Pieces.generateMoves(opposite.board, opposite.sideToMove, opposite.castlingOrigins,
+        opposite.enPassantTarget, null, true);
+    if (terminal) {
+      if (legal == 1) {
+        lanBuilder.append("=");
+      } else {
+        if (legal < -1) {
+          lanBuilder.repeat("+", -legal);
+        }
+        lanBuilder.append("#");
+      }
+    } else {
+      if (legal < 0) {
+        lanBuilder.repeat("+", -legal);
+      }
+    }
   }
 
   String toFormattedString(String operation) {

@@ -1,6 +1,14 @@
 # Changelog
 
+## [1.5.0] - 2026-10-20
+
+### Changed
+
+- Make move is now data-driven-template-based
+
 ## [1.4.0] - 2026-10-19
+
+### Changed
 
 - One-run search lists are now queues
 
